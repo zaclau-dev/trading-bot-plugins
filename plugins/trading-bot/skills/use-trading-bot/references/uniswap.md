@@ -2,17 +2,36 @@
 
 - Adapter ID: `uniswap` (the Project ID comes from `list_projects`)
 - Network: Monad mainnet, chain ID `143`
-- Swap actions: `swap_mon_to_ausd` and `swap_ausd_to_mon`
-- Approval action: `approve_ausd`
+- Generic swap action: `swap_exact_input`
+- Generic approval action: `approve_token`
+- Backward-compatible actions: `swap_mon_to_ausd`, `swap_ausd_to_mon`, `approve_ausd`
 
-## Fixed routing and quote
+## Generic token, path, pool, router, and calldata parameters
 
-The adapter never executes a direct WMON/AUSD pool. It searches only the pinned WMON/USDC/AUSD two-hop route (reversed for AUSD to MON) across reviewed Uniswap v3 fee tiers. The selected transaction uses the adapter's exact input and minimum output.
+Always discover the live capability schema. `swap_exact_input` currently accepts:
 
-Before returning a preview and again before broadcast, the adapter checks pinned contract bytecode, a second independent WMON/USDC pool price, size-aware price impact, the two-way USDC/AUSD peg, the current best pinned route, slippage floor, wallet capacity, and full transaction simulation. Any failed check blocks the swap.
+- `tokenPath`: comma-separated token addresses, with `MON` allowed only at the first or last endpoint;
+- `feeTiers`: comma-separated Uniswap v3 uint24 fee tiers, one per hop;
+- `amountIn`, `tokenInDecimals`, and `tokenOutDecimals`; token decimals are checked onchain;
+- optional display symbols and `maxSlippageBps`;
+- optional `pools`, one address per hop, each checked against the official Uniswap v3 Factory;
+- optional `router`, accepted only when its runtime bytecode matches the reviewed SwapRouter02;
+- optional `calldata`, accepted only when it exactly equals the adapter-generated `exactInput` or `multicall(exactInput,unwrapWETH9)` for the normalized route, wallet recipient, amount, minimum output, and native value.
+
+`approve_token` takes a token, exact amount, onchain-verified decimals, and optional compatible router. It never creates an unlimited approval.
+
+Do not invent token addresses, decimals, fee tiers, pools, router addresses, symbols, or calldata. Use values the user supplied or values returned by discovery. Treat `MON` and WMON as distinct except for the adapter's endpoint wrapping/unwrapping behavior.
+
+## Verification and quote behavior
+
+For generic routes, the server verifies canonical Factory and Quoter bytecode, compatible Router02 bytecode, token contracts and decimals, every Factory pool, current quote, size-aware price impact, allowance/balance, gas capacity, recipient, native value, slippage floor, and full simulation. It repeats transaction decoding, the quote, safety ceilings, and simulation immediately before broadcast.
+
+The legacy MON/AUSD actions retain their additional best-route search, independent WMON/USDC pool comparison, and two-way USDC/AUSD peg check. Those legacy checks do not appear on unrelated custom token routes.
+
+Custom tokens, pools, and routes may be illiquid, malicious, or misleading. Display the actual addresses, verified pools, Router, path, fee tiers, symbols, exact input, quote, minimum output, price impact, gas, simulation, and all warnings. Never imply that Factory registration proves a token is safe.
 
 ## Mandatory two-turn confirmation
 
-The swap preview contains `requiresExplicitConfirmation: true` and a canonical `swapQuote` with exact input, quoted output, minimum output, route, slippage, plus decoded price-impact and route-deviation fields.
+Every swap preview contains `requiresExplicitConfirmation: true` and a canonical `swapQuote`. Display it verbatim, ask the adapter-provided confirmation question, and end the assistant turn. Never call `confirm_dapp_action` in the preview turn. Only a later explicit confirmation of that exact displayed plan permits confirmation.
 
-Display those values and all warnings, ask the user whether to execute that exact quote, and end the assistant turn. Never call `confirm_dapp_action` in the preview turn. Only a later explicit user confirmation of the displayed swap permits confirmation. AUSD approval is a separate action and never counts as swap confirmation.
+An ERC-20 approval is a separate action. Approval confirmation never counts as swap confirmation, and changing any token, path, fee, pool, router, calldata, amount, quote, wallet, or adapter version requires a fresh preview and a new confirmation.
