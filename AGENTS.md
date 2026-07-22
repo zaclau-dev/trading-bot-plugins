@@ -10,5 +10,10 @@
   that runtime here.
 - Validate the Codex plugin, shared skill, and Claude marketplace before every
   release. Bump the manifest and marketplace versions together.
+- When the sibling service changes any externally visible adapter action,
+  parameter, supported asset, adapter version, preview field, confirmation
+  behavior, or safety rule, synchronize the shared Skill/reference and bump all
+  plugin and marketplace versions in the same task. Do not treat the runtime
+  implementation as complete until the synchronized plugin validates.
 - Deploy and verify a compatible MCP server before publishing skill or endpoint
   changes.

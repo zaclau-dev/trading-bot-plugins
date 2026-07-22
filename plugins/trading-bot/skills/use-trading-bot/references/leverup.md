@@ -1,33 +1,86 @@
 # LeverUp adapter reference for Trading Bot
 
-This reference describes adapter version `0.6.0`. Values are runtime-pinned defaults, not timeless protocol facts.
+This reference describes adapter version `0.7.0`. Values are runtime-pinned defaults, not timeless protocol facts.
 
-## Supported operation
+## Supported operations
 
 - Adapter ID: `leverup` (the Project ID comes from `list_projects`)
 - Chain: Monad mainnet, chain ID `143`
-- Actions: `open_position`, `close_position`
+- Actions: `approve_collateral`, `open_position`, `close_position`
 - Market: selected by the user; the adapter resolves it against the live LeverUp pair list during preview
 - Direction: `long` or `short`
-- Collateral: native MON; `tokenIn` uses the current WMON address expected by LeverUp
+- Default collateral asset: native `MON`
 - Default leverage: `2x`
 - Default maximum slippage: `100` basis points
 - Stop loss and take profit: disabled in this adapter version
 - Broker ID: `1` by default and server-configurable
 
-Required `parameters` for `preview_dapp_action`:
+## Collateral assets
+
+The adapter supports these collateral mappings:
+
+| Collateral asset | `tokenIn` | `lvToken` | Transaction native value |
+| --- | --- | --- | --- |
+| `MON` | `WMON` | `LVMON` | collateral amount plus oracle fees |
+| `LVMON` | `LVMON` | `LVMON` | oracle fees only |
+| `LVUSD` | `LVUSD` | `LVUSD` | oracle fees only |
+| `USDC` | `USDC` | `LVUSD` | oracle fees only |
+| `LV` | `LV` | `LV` | oracle fees only |
+
+The current LeverUp mainnet frontend uses the pinned WMON address as `tokenIn`
+for native MON while sending the MON collateral amount as transaction value.
+`LV` is enabled only when LeverUp's live direct-collateral switch, oracle, margin
+token, and open-cap checks all pass.
+
+`collateralAmount` is denominated in the selected collateral asset, not always in
+MON. The adapter applies the pinned decimals and server limit for that asset.
+
+## ERC-20 collateral approval
+
+Before opening with `LVMON`, `LVUSD`, `USDC`, or `LV`, preview and explicitly
+confirm a separate `approve_collateral` action for the exact collateral amount:
+
+```json
+{
+  "collateralAsset": "USDC",
+  "collateralAmount": "100"
+}
+```
+
+The spender is the pinned LeverUp Diamond. `MON` is native collateral and cannot
+be passed to `approve_collateral`. Never use an unlimited approval, combine the
+approval and open confirmations, or treat approval confirmation as permission to
+open a position.
+
+After the approval succeeds, create a fresh `open_position` preview and require a
+new explicit confirmation. A pre-existing allowance is accepted only when it is
+at least the requested collateral amount.
+
+## Open a position
+
+Required and optional `parameters` for `preview_dapp_action`:
 
 ```json
 {
   "market": "BTC/USD",
   "direction": "long",
+  "collateralAsset": "USDC",
   "collateralAmount": "100",
   "leverage": 2,
   "maxSlippageBps": 100
 }
 ```
 
-The market is not fixed to MON. `collateralAmount` is still denominated in native MON for every currently supported LeverUp market.
+`market`, `direction`, and `collateralAmount` are required. `collateralAsset` is
+optional and defaults to `MON`; `leverage` defaults to `2`; and
+`maxSlippageBps` defaults to `100`. Always use the capability declaration returned
+by `list_dapp_adapters` as the live contract.
+
+LVMON can be used directly as LeverUp collateral in adapter version `0.7.0`.
+Swapping LVMON to MON through PancakeSwap is a separate optional workflow and is
+not required for a LeverUp position.
+
+## Close a position
 
 To close an entire position, pass its LeverUp `tradeHash`:
 
@@ -46,33 +99,40 @@ already closed, or foreign position is rejected. LeverUp close settlement is ora
 driven: the submitted transaction receipt proves acceptance of the close request,
 not the later settlement outcome.
 
-LVMON conversion is not a LeverUp adapter action in version `0.6.0`. When the
-server advertises the PancakeSwap adapter, use its separately previewed and
-confirmed `approve_lvmon` and `swap_lvmon_to_mon` actions instead. Never infer
-that PancakeSwap is available without discovering it from `list_dapp_adapters`.
-
 ## Runtime safety checks
 
 Before generating a plan, the adapter:
 
 - resolves the user-selected market from LeverUp's live pair list and requires `AVAILABLE` status;
 - reads trading, fee, and slippage settings for the selected pair from the Diamond;
-- checks adapter-wide collateral, leverage, market, action, and direction limits; Privy Policies provide the wallet-level authorization boundary;
-- requires the exact project Owner, wallet Policy, KMS signer and signer override Policy, then checks MON balance;
+- applies per-asset decimals and collateral limits, then checks the selected wallet's balance;
+- requires sufficient allowance to the pinned LeverUp Diamond for ERC-20 collateral;
+- pins collateral addresses, decimals, and bytecode hashes and rejects unsupported or changed token contracts;
+- checks native value as collateral plus oracle fees for MON and oracle fees only for ERC-20 collateral;
+- checks LeverUp's live direct-collateral switch, oracle, margin-token registration, and open cap for LV;
+- checks adapter-wide leverage, market, action, and direction limits; Privy Policies provide the wallet-level authorization boundary;
+- requires the exact project Owner, wallet Policy, KMS signer, and signer override Policy;
 - resolves `openMarketTradeV2` and `closeTrade` through Diamond Loupe and compares the facet and bytecode hash with pinned values;
-- fetches the selected market price and the MON collateral price separately, then fetches oracle update data for the selected pair;
-- simulates the exact transaction from the assigned wallet.
+- fetches the selected market price and the applicable collateral price, then fetches oracle update data for the selected pair;
+- caps the total oracle fee and simulates the exact transaction from the assigned wallet.
 
-The server repeats the facet/hash check and exact transaction simulation immediately before signing.
+For `approve_collateral`, the adapter constructs only an exact ERC-20 `approve`
+call to the pinned Diamond, with zero native value, after checking token identity,
+balance, amount, and the applicable LV state.
+
+The server repeats the contract, asset mapping, amount, allowance, native value,
+facet/hash, and exact transaction simulation checks immediately before signing.
 
 ## Maintenance triggers
 
 Disable live execution and update the adapter when any of these occur:
 
-- the Diamond, collateral, or lvToken addresses change;
+- the Diamond, WMON, LVMON, LVUSD, USDC, or LV addresses change;
+- a pinned collateral token's decimals or bytecode hash changes;
+- the collateral mapping, direct-collateral state, oracle, margin-token registration, or open cap changes;
 - the `openMarketTradeV2` selector resolves to a different facet;
 - the `closeTrade` selector resolves to a different facet;
-- the pinned facet bytecode hash changes;
+- a pinned facet bytecode hash changes;
 - LeverUp changes the pair schema, order ABI, oracle endpoints, request/response schema, fee math, collateral convention, broker convention, or chain deployment;
 - the current frontend and developer documentation disagree on a transaction field;
 - simulation starts failing for otherwise valid previews.
@@ -81,4 +141,8 @@ Run `check:projects` before a production release and as a recurring deployment p
 
 ## Operator boundary
 
-The Plugin and Skill are distributable client instructions. Privy App credentials, KMS authorization signer, internal wallet IDs, operator mappings, plan database, and live-execution switch exist only in the hosted services. The Agent obtains short-lived OAuth tokens through browser authorization; the administrator never copies tokens or receives signing material.
+The Plugin and Skill are distributable client instructions. Privy App credentials,
+KMS authorization signer, internal wallet IDs, operator mappings, plan database,
+and live-execution switch exist only in the hosted services. The Agent obtains
+short-lived OAuth tokens through browser authorization; the administrator never
+copies tokens or receives signing material.
