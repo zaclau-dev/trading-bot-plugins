@@ -1,0 +1,20 @@
+{
+  "name": "trading-bot-plugins",
+  "interface": {
+    "displayName": "Trading Bot Plugins"
+  },
+  "plugins": [
+    {
+      "name": "trading-bot",
+      "source": {
+        "source": "local",
+        "path": "./plugins/trading-bot"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

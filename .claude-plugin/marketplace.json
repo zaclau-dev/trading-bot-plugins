@@ -1,0 +1,25 @@
+{
+  "name": "trading-bot-plugins",
+  "description": "Installable Trading Bot workflows and guarded onchain tools for Codex and Claude Code.",
+  "owner": {
+    "name": "zaclau-dev"
+  },
+  "plugins": [
+    {
+      "name": "trading-bot",
+      "source": "./plugins/trading-bot",
+      "description": "Trading Bot workflows for guarded actions across supported onchain adapters.",
+      "version": "0.3.0",
+      "author": {
+        "name": "zaclau-dev"
+      },
+      "homepage": "https://github.com/zaclau-dev/trading-bot-plugins/tree/main/plugins/trading-bot",
+      "repository": "https://github.com/zaclau-dev/trading-bot-plugins",
+      "category": "Productivity"
+    }
+  ],
+  "renames": {
+    "leverup-mon-trader": "trading-bot",
+    "onchain-actions": "trading-bot"
+  }
+}

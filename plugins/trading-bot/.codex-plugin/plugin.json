@@ -1,0 +1,39 @@
+{
+  "name": "trading-bot",
+  "version": "0.3.0",
+  "description": "Use Trading Bot to discover, preview, confirm, and execute guarded actions through supported onchain adapters and assigned Privy wallets.",
+  "author": {
+    "name": "zaclau-dev",
+    "url": "https://github.com/zaclau-dev"
+  },
+  "homepage": "https://github.com/zaclau-dev/trading-bot-plugins/tree/main/plugins/trading-bot",
+  "repository": "https://github.com/zaclau-dev/trading-bot-plugins",
+  "keywords": [
+    "onchain",
+    "dapp",
+    "monad",
+    "privy",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Trading Bot",
+    "shortDescription": "Guarded trading workflows across supported dApps.",
+    "longDescription": "Trading Bot provides a shared natural-language workflow over supported onchain adapters and assigned Privy wallets. Every state-changing action is validated, simulated, shown as an immutable short-lived plan, and requires a separate confirmation before the MCP service queues it for the guarded Executor.",
+    "developerName": "zaclau-dev",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/zaclau-dev/trading-bot-plugins/tree/main/plugins/trading-bot",
+    "defaultPrompt": [
+      "Show the onchain projects and actions available to me.",
+      "List the markets I can use on LeverUp.",
+      "Preview a low-leverage position on a LeverUp market without executing it."
+    ],
+    "brandColor": "#6D5DFB"
+  }
+}
