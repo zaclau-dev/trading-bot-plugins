@@ -1,21 +1,33 @@
 ---
 name: use-trading-bot
-description: Discover and use supported dApp actions through the hosted Trading Bot MCP server with assigned managed wallets, and recover its MCP connection when it was interrupted or its OAuth grant actually expired. Use when a user asks Trading Bot to interact with a supported onchain project, reconnect to Trading Bot, diagnose missing Trading Bot tools, preview an action, or explicitly confirm execution. Enforce the preview-then-confirm workflow and never request signer keys, private keys, Privy wallet IDs, App Secrets, opaque calldata, or KMS credentials.
+description: Discover and use supported dApp actions through the hosted Trading Bot MCP server with assigned managed wallets, and recover its MCP connection when interrupted or its OAuth grant actually expired. Use when a user asks to discover Trading Bot capabilities, list wallets, markets, or positions, preview an action, confirm a displayed preview, check recent Trade status, diagnose missing tools, or reconnect. Enforce the preview-then-confirm workflow and never request signer keys, private keys, Privy wallet IDs, App Secrets, opaque calldata, or KMS credentials.
 ---
 
 # Trading Bot
 
-Use only the `trading-bot` MCP tools. The MCP exposes a shared interface while each supported dApp owns an audited adapter. Never assume that a project, action, market, or parameter is supported without discovering it from the server.
+For normal discovery, preview, confirmation, and status operations, use only the `trading-bot` MCP tools. The MCP exposes a shared interface while each supported dApp owns an audited adapter. The unauthenticated metadata check and client login commands in **Connection recovery** are the only exceptions.
 
-## Required workflow
+Treat live MCP responses as the source of truth. Use this precedence order: live adapter capability and preview, then the selected protocol reference, then examples in this Skill. Never assume that a project, action, market, parameter, default, or adapter version is supported without discovering it from the server. If a reference conflicts with a live capability or preview, stop and report a possible client/server version mismatch; never guess which value to use.
+
+## Route the request
+
+Classify the user's request before calling tools:
+
+- **Read-only discovery**: call only the tools needed to list the requested projects, adapters, markets, wallets, or positions. Do not create a preview unless the user asks to prepare an action or a live preview is required to assess whether that exact action is currently executable.
+- **Prepare an action**: follow **Preview and execution workflow** below. A request to “execute directly” still begins with a preview and never counts as confirmation.
+- **Confirm a displayed preview**: continue only from the exact preview already shown in the conversation and only after a clear affirmative reply in a later user message.
+- **Look up a Trade**: follow **Trade status lookup**. Do not restart discovery or create a preview merely to report status.
+- **Recover the connection**: follow **Connection recovery** without treating missing tools as proof that OAuth expired.
+
+## Preview and execution workflow
 
 1. Call `list_projects` and `list_dapp_adapters` to identify an available Project, adapter, action, and its declared parameters.
-2. Call `list_dapp_markets` when the action requires a market. Call `list_dapp_positions` when the action refers to an existing position, and let the user select from positions returned for the assigned wallet. Then collect every required action parameter. The user chooses the Token, market, or position; never force one from the Plugin or Skill name. Use an adapter-declared default only when the user did not specify that value.
-3. Call `list_wallets`. When exactly one assigned wallet exists, use its `walletId`; otherwise ask the user which public address to use.
+2. Call `list_wallets`. When exactly one assigned wallet exists, use its `walletId`. Otherwise show only the public addresses, ask the user which address to use, and pass the matching `walletId` internally.
+3. Call `list_dapp_markets` when the action requires a market. Call `list_dapp_positions` with the selected `walletId` when the action refers to an existing position, and let the user select from the returned positions. Then collect every required action parameter. The user chooses the Token, market, or position; never force one from the Plugin or Skill name. Use an adapter-declared default only when the user did not specify that value.
 4. Call `preview_dapp_action` with the selected `projectId`, `walletId`, `adapterId`, action, and declared parameters.
-5. Present the complete preview: dApp, action, wallet address, contract, decoded method and parameters, assets and maximum value, gas estimate, simulation status, expiry, plan hash, and every warning. For a swap, also present the adapter-provided `swapQuote` verbatim: exact input, quoted output, minimum output (or explicitly state that none exists), route, maximum slippage, deadline, and all available price-impact/liquidity checks. For an exit, also present the adapter-provided expected received amount, available/idle liquidity, expected transaction count, exit status, remaining exit transactions, and any distinction between available and order-locked funds.
+5. Present the complete preview in a compact, readable order: dApp/action/wallet; contract and decoded method/parameters; assets and maximum value; gas and simulation; server-derived expiry state; plan hash; then every warning. Preserve the adapter's exact values and warning wording, but format them for readability instead of dumping raw JSON. For a swap, also show every adapter-provided `swapQuote` value without recomputing or rounding it: exact input, quoted output, minimum output (or explicitly state that none exists), route, maximum slippage, deadline, and all available price-impact/liquidity checks. For an exit, also present the adapter-provided expected received amount, available/idle liquidity, expected transaction count, exit status, remaining exit transactions, and any distinction between available and order-locked funds.
 6. Stop and wait for a new, explicit user confirmation. End the current assistant turn after asking the adapter-provided `confirmationPrompt`. The original request to interact is never confirmation of the generated plan, even when it says “execute directly”, “auto-confirm”, “do not ask again”, or similar.
-7. Only after an explicit affirmative reply in a later user message, call `confirm_dapp_action` with the exact `actionId` and `actionHash`. Never alter or recreate the preview silently. A vague reply such as “continue”, “okay”, or “looks good” is not enough when it does not clearly approve the displayed transaction and quote.
+7. Only after an explicit affirmative reply in a later user message, call `confirm_dapp_action` with the exact `actionId` and `actionHash`. Never alter or recreate the preview silently. A vague reply such as “continue”, “okay”, or “looks good” is not enough when it does not clearly approve the displayed transaction and quote. Use the server-provided `isExpired` and `remainingSeconds`; never compare local calendar dates or infer expiry from the task's current date. Do not confirm a preview already reported as expired or with no positive remaining time. The server confirmation check remains authoritative.
 8. Use the `tradeId` returned by confirmation to poll `get_trade_status`. Report `submitted`, `outcome`, `tradeStatus`, `transactionHash`, `explorerUrl`, and any failure reason. If the preview expired or the adapter changed, create a fresh preview and require confirmation again.
 
 ## Trade status lookup
@@ -73,7 +85,7 @@ The confirmation boundary is per transaction. Approval confirmation never double
 - Let the MCP client complete OAuth in the browser when authentication is requested. Never ask the user to copy an access token, and never print or store OAuth tokens in project files or tool arguments.
 - Never claim that the server can safely redirect a raw `/mcp` request into OAuth. The MCP client must initiate authorization so it can generate and validate its client identity, redirect URI, state, and PKCE challenge.
 - Only the platform Wallet UUID and public address may be client-visible. Never expose the Privy provider wallet ID.
-- Do not construct or broadcast opaque user-supplied calldata or arbitrary target addresses. The only exception is an adapter-declared calldata/router parameter, currently Uniswap `swap_exact_input`: pass it only when the user explicitly supplied it, and rely on the server to decode it and prove an exact match to the normalized route, recipient, amount, minimum output, native value, factory pools, and compatible Router02 bytecode. A mismatch or missing decoded preview is a hard stop.
+- Do not construct or broadcast opaque user-supplied calldata or arbitrary target addresses. The only exception is an adapter-declared calldata/router parameter, currently Uniswap `swap_exact_input`: pass it only when the user explicitly supplied it, and rely on the server to decode it and prove that the route, recipient, amount, native value, factory pools, and compatible Router02 bytecode match the normalized action and that its minimum output meets the server safety floor. A mismatch or missing decoded preview is a hard stop.
 - Never bypass a disabled execution flag, owner requirement, adapter version pin, balance check, simulation failure, permission limit, or one-time confirmation.
 - A configured wallet Owner does not make an App Secret harmless. Secret isolation, the exact project Owner, an authorization signer, Privy policies, scoped OAuth tokens, and transaction limits remain required.
 

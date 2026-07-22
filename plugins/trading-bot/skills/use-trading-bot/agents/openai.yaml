@@ -1,7 +1,7 @@
 interface:
   display_name: "Trading Bot"
-  short_description: "Trade safely and recover interrupted MCP connections"
-  default_prompt: "Use $use-trading-bot to check my Trading Bot connection and list the supported projects without executing a transaction."
+  short_description: "Preview and execute guarded onchain actions"
+  default_prompt: "Use $use-trading-bot to show the supported projects and preview a guarded action without executing it."
 
 dependencies:
   tools:

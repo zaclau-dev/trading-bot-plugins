@@ -16,7 +16,7 @@ Always discover the live capability schema. `swap_exact_input` currently accepts
 - optional display symbols and `maxSlippageBps`;
 - optional `pools`, one address per hop, each checked against the official Uniswap v3 Factory;
 - optional `router`, accepted only when its runtime bytecode matches the reviewed SwapRouter02;
-- optional `calldata`, accepted only when it exactly equals the adapter-generated `exactInput` or `multicall(exactInput,unwrapWETH9)` for the normalized route, wallet recipient, amount, minimum output, and native value.
+- optional `calldata`, accepted only as decoded `exactInput`, one-hop `exactInputSingle`, or `multicall(exactInput,unwrapWETH9)`. Its path/fee, wallet recipients, amount, and native value must match the normalized action, and its minimum output must be at least the server-computed safety floor.
 
 `approve_token` takes a token, exact amount, onchain-verified decimals, and optional compatible router. It never creates an unlimited approval.
 
