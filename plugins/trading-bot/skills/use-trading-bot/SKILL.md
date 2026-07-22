@@ -1,6 +1,6 @@
 ---
 name: use-trading-bot
-description: Discover and use supported dApp actions through the Trading Bot MCP server with assigned managed wallets, and recover its local MCP connection when it was interrupted or its OAuth grant actually expired. Use when a user asks Trading Bot to interact with a supported onchain project, reconnect after restarting the local service, diagnose missing Trading Bot tools, preview an action, or explicitly confirm execution. Enforce the preview-then-confirm workflow and never request signer keys, private keys, Privy wallet IDs, App Secrets, arbitrary calldata, or KMS credentials.
+description: Discover and use supported dApp actions through the hosted Trading Bot MCP server with assigned managed wallets, and recover its MCP connection when it was interrupted or its OAuth grant actually expired. Use when a user asks Trading Bot to interact with a supported onchain project, reconnect to Trading Bot, diagnose missing Trading Bot tools, preview an action, or explicitly confirm execution. Enforce the preview-then-confirm workflow and never request signer keys, private keys, Privy wallet IDs, App Secrets, arbitrary calldata, or KMS credentials.
 ---
 
 # Trading Bot
@@ -63,19 +63,19 @@ The confirmation boundary is per transaction. Approval confirmation never double
 
 ## Connection recovery
 
-Do not equate missing tools, a stopped local service, or a stale task with an expired OAuth grant. In particular, restarting the local Dashboard does not by itself revoke the PostgreSQL-backed OAuth client, refresh token, or signing key.
+Do not equate missing tools, temporary service unavailability, or a stale task with an expired OAuth grant. In particular, restarting or redeploying the hosted Dashboard does not by itself revoke the PostgreSQL-backed OAuth client, refresh token, or signing key.
 
 When `trading-bot` tools are missing or unavailable in Codex:
 
-1. Check the local service without credentials:
+1. Check the hosted service without credentials:
 
    ```bash
    curl --silent --show-error --fail --max-time 3 \
-     http://localhost:3000/.well-known/oauth-protected-resource/mcp
+     https://trading-bot-five-pink.vercel.app/.well-known/oauth-protected-resource/mcp
    ```
 
-2. If that request cannot connect, say that the Trading Bot service is offline. Help start or repair the local service; do not claim that authorization expired and do not start OAuth.
-3. If metadata is reachable but the tools are absent from the current task, say that the task's MCP tool snapshot is stale after the service restart. Ask the user to open a new task after the service is ready. Do not reauthorize; Codex should reuse and refresh its stored OAuth grant.
+2. If that request cannot connect, say that the hosted Trading Bot service is unreachable. Do not claim that authorization expired and do not start OAuth.
+3. If metadata is reachable but the tools are absent from the current task, say that the task's MCP tool snapshot may be stale. Ask the user to open a new task. Do not reauthorize; Codex should reuse and refresh its stored OAuth grant.
 4. Treat the grant as expired only when an MCP response or OAuth refresh explicitly reports `invalid_token`, `invalid_grant`, a revoked refresh token, or an expired refresh token. A Codex UI label such as “OAuth authenticated” only confirms that credentials are stored; it is not a live connection health check.
 5. For a confirmed OAuth failure, use the active client's supported login flow and never ask the user to copy a token:
    - In Codex, run `codex mcp login trading-bot` when the user explicitly asks to reconnect.

@@ -7,9 +7,10 @@ Trading Bot ships one shared skill and MCP connection for Codex and Claude Code.
 - MCP server: `trading-bot`
 - Marketplace: `trading-bot-plugins`
 
-The default MCP endpoint is `http://localhost:3000/mcp` for local integration
-testing. A production release must replace it with the deployed HTTPS endpoint
-in both `.mcp.json` and `skills/use-trading-bot/agents/openai.yaml`.
+The production MCP endpoint is
+`https://trading-bot-five-pink.vercel.app/mcp`. It is shared by `.mcp.json`,
+`skills/use-trading-bot/agents/openai.yaml`, and the connection-recovery steps
+in `skills/use-trading-bot/SKILL.md`.
 
 ## Install
 

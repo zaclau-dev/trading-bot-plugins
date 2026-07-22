@@ -1,7 +1,7 @@
 interface:
   display_name: "Trading Bot"
   short_description: "Trade safely and recover interrupted MCP connections"
-  default_prompt: "Use $use-trading-bot to restore my Trading Bot connection after restarting the local service."
+  default_prompt: "Use $use-trading-bot to check my Trading Bot connection and list the supported projects without executing a transaction."
 
 dependencies:
   tools:
@@ -9,7 +9,7 @@ dependencies:
       value: "trading-bot"
       description: "Hosted project-adapter preview and execution service"
       transport: "streamable_http"
-      url: "http://localhost:3000/mcp"
+      url: "https://trading-bot-five-pink.vercel.app/mcp"
 
 policy:
   allow_implicit_invocation: true

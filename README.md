@@ -46,10 +46,10 @@ Start a new session after installation.
 
 ## Local development
 
-The committed MCP URL is `http://localhost:3000/mcp` for local integration
-testing. Do not describe this repository as a production-ready public plugin
-until `.mcp.json` and the Codex skill metadata point to the deployed HTTPS MCP
-endpoint.
+The committed production MCP URL is
+`https://trading-bot-five-pink.vercel.app/mcp`. Local integration testing may
+temporarily override it in an uncommitted development configuration, but never
+commit a loopback URL to a release.
 
 Validate both platforms before publishing:
 
