@@ -10,7 +10,7 @@ Use only the `trading-bot` MCP tools. The MCP exposes a shared interface while e
 ## Required workflow
 
 1. Call `list_projects` and `list_dapp_adapters` to identify an available Project, adapter, action, and its declared parameters.
-2. Call `list_dapp_markets` when the action requires a market, then collect every required action parameter. The user chooses the Token or market; never force a market from the Plugin or Skill name. Use an adapter-declared default only when the user did not specify that value.
+2. Call `list_dapp_markets` when the action requires a market. Call `list_dapp_positions` when the action refers to an existing position, and let the user select from positions returned for the assigned wallet. Then collect every required action parameter. The user chooses the Token, market, or position; never force one from the Plugin or Skill name. Use an adapter-declared default only when the user did not specify that value.
 3. Call `list_wallets`. When exactly one assigned wallet exists, use its `walletId`; otherwise ask the user which public address to use.
 4. Call `preview_dapp_action` with the selected `projectId`, `walletId`, `adapterId`, action, and declared parameters.
 5. Present the complete preview: dApp, action, wallet address, contract, decoded method and parameters, assets and maximum value, gas estimate, simulation status, expiry, plan hash, and every warning. For a swap, also present the adapter-provided `swapQuote` verbatim: exact input, quoted output, minimum output (or explicitly state that none exists), route, maximum slippage, deadline, and all available price-impact/liquidity checks.
@@ -22,12 +22,13 @@ Use only the `trading-bot` MCP tools. The MCP exposes a shared interface while e
 
 When the user asks whether a recent transaction was submitted, succeeded, or failed, this is a read-only lookup and does not require the preview workflow:
 
-1. If a `tradeId` is available, call `get_trade_status` directly.
-2. If the user has no ID or says “the latest/recent transaction”, call `list_recent_trades` first. Use `projectId` only when the user named a Project or the result needs narrowing.
-3. Interpret the normalized fields literally: `submitted=true` means a transaction hash was accepted; `submitted=false` means it was only queued or was rejected before broadcast; `submitted=null` means submission is still in progress or cannot be determined safely. Never describe `CREATED` as submitted.
-4. `outcome=SUCCEEDED` is the only success result. `PENDING` is not success. For `FAILED`, distinguish `REJECTED` (not broadcast), `REVERTED` (broadcast but reverted), and `UNKNOWN` (the attempt ended without a usable transaction result). Include `errorCode`/`failureReason`.
-5. Treat `UNKNOWN` as a final retryable failure. It does not block the wallet. When the user asks to retry the same operation, start a fresh `preview_dapp_action` and require a new explicit confirmation; confirmation creates a new Action and Trade ID. Never requeue the old UNKNOWN Trade, reuse its expired preview, or reuse its idempotency key.
-6. Always return the `transactionHash` and `explorerUrl` when present. If no hash is present, say so explicitly.
+1. If an `actionId` is available but no `tradeId` is known, call `get_dapp_action` to retrieve the action and associated Trade state.
+2. If a `tradeId` is available, call `get_trade_status` directly.
+3. If the user has no ID or says “the latest/recent transaction”, call `list_recent_trades` first. Use `projectId` only when the user named a Project or the result needs narrowing.
+4. Interpret the normalized fields literally: `submitted=true` means a transaction hash was accepted; `submitted=false` means it was only queued or was rejected before broadcast; `submitted=null` means submission is still in progress or cannot be determined safely. Never describe `CREATED` as submitted.
+5. `outcome=SUCCEEDED` is the only success result. `PENDING` is not success. For `FAILED`, distinguish `REJECTED` (not broadcast), `REVERTED` (broadcast but reverted), and `UNKNOWN` (the attempt ended without a usable transaction result). Include `errorCode`/`failureReason`.
+6. Treat `UNKNOWN` as a final retryable failure. It does not block the wallet. When the user asks to retry the same operation, start a fresh `preview_dapp_action` and require a new explicit confirmation; confirmation creates a new Action and Trade ID. Never requeue the old UNKNOWN Trade, reuse its expired preview, or reuse its idempotency key.
+7. Always return the `transactionHash` and `explorerUrl` when present. If no hash is present, say so explicitly.
 
 ## Mandatory swap confirmation gate
 
@@ -88,3 +89,5 @@ Read [references/perpl.md](references/perpl.md) when the selected project is Per
 Read [references/nadfun.md](references/nadfun.md) when the selected project is nad.fun, a token needs Router approval, Lens changes the selected route, a protocol check fails, or its adapter is being maintained.
 
 Read [references/uniswap.md](references/uniswap.md) when the selected project is Uniswap, MON or AUSD is being swapped, a quote is rejected, or its adapter is being maintained.
+
+Read [references/pancakeswap.md](references/pancakeswap.md) when the selected project is PancakeSwap, LVMON is being approved or swapped to MON, a quote is rejected, or its adapter is being maintained.
