@@ -12,16 +12,29 @@ The production MCP endpoint is
 `skills/use-trading-bot/agents/openai.yaml`, and the connection-recovery steps
 in `skills/use-trading-bot/SKILL.md`.
 
-## Install
+## Install and update
 
-Codex:
+Codex first-time installation:
 
 ```bash
 codex plugin marketplace add zaclau-dev/trading-bot-plugins --ref main
 codex plugin add trading-bot@trading-bot-plugins
 ```
 
-Claude Code:
+Complete OAuth when prompted, then start a new Codex task so the Plugin, Skill,
+and MCP tools are loaded.
+
+Codex update for users who already installed the marketplace and plugin:
+
+```bash
+codex plugin marketplace upgrade trading-bot-plugins
+codex plugin add trading-bot@trading-bot-plugins
+```
+
+Do not use `marketplace upgrade` for a first-time installation; the marketplace
+must be added first.
+
+Claude Code first-time installation:
 
 ```text
 /plugin marketplace add zaclau-dev/trading-bot-plugins

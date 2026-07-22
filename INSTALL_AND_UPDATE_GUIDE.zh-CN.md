@@ -16,12 +16,14 @@ MCP Tool Schema 由客户端连接时自动读取，无需单独安装。
 
 ### Codex
 
+外部新用户或新机器首次安装时，按顺序执行以下两条命令：
+
 ```bash
 codex plugin marketplace add zaclau-dev/trading-bot-plugins --ref main
 codex plugin add trading-bot@trading-bot-plugins
 ```
 
-安装后新建 Codex 任务，并按提示完成 OAuth 授权。
+按提示完成 OAuth 授权，然后新建 Codex 任务，让 Plugin、Skill 和 MCP 工具生效。首次安装不能使用 `marketplace upgrade`，因为新用户尚未添加该 marketplace。
 
 ### Claude Code
 
@@ -47,6 +49,9 @@ claude plugin install trading-bot@trading-bot-plugins
 }
 ```
 
+注意：这里的 `type: "http"` 是 MCP 客户端使用的传输类型；实际连接地址是
+`https://`，因此连接仍然通过 HTTPS 加密。不要把 `type` 改成 `"https"`。
+
 使用上方 Trading Bot 官方 HTTPS MCP 地址。保存后重启 Agent 或重新连接 MCP，并按提示完成 OAuth 授权。
 
 只有官方说明明确支持时，才需要另外安装独立 Skill。不同 Agent 平台没有通用的一键安装命令，请使用官方提供的平台专用命令。
@@ -54,6 +59,8 @@ claude plugin install trading-bot@trading-bot-plugins
 ## 更新
 
 ### Codex
+
+只有已经安装过 `trading-bot-plugins` marketplace 和 `trading-bot` plugin 的用户才执行：
 
 ```bash
 codex plugin marketplace upgrade trading-bot-plugins

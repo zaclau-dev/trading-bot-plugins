@@ -26,12 +26,27 @@ plugins/trading-bot/
 
 ## Install with Codex
 
+For a first-time installation, add the public marketplace before installing
+the plugin:
+
 ```bash
 codex plugin marketplace add zaclau-dev/trading-bot-plugins --ref main
 codex plugin add trading-bot@trading-bot-plugins
 ```
 
-Start a new task after installation so Codex loads the plugin tools and skill.
+Complete OAuth when prompted, then start a new task so Codex loads the Plugin,
+Skill, and MCP tools.
+
+If the marketplace and plugin are already installed, refresh the marketplace
+and reinstall the current plugin version instead:
+
+```bash
+codex plugin marketplace upgrade trading-bot-plugins
+codex plugin add trading-bot@trading-bot-plugins
+```
+
+The `upgrade` command is only for an already configured marketplace; it is not
+a substitute for `marketplace add` on a new machine.
 
 ## Install with Claude Code
 

@@ -16,12 +16,14 @@ MCP Tool Schemas are loaded automatically when the client connects. No separate 
 
 ### Codex
 
+For a first-time installation on a new machine, run both commands in order:
+
 ```bash
 codex plugin marketplace add zaclau-dev/trading-bot-plugins --ref main
 codex plugin add trading-bot@trading-bot-plugins
 ```
 
-Start a new Codex task after installation and complete OAuth authorization when prompted.
+Complete OAuth authorization when prompted, then start a new Codex task so the Plugin, Skill, and MCP tools are loaded. Do not use `marketplace upgrade` for a first-time installation because the marketplace has not been configured yet.
 
 ### Claude Code
 
@@ -47,6 +49,10 @@ Prefer the platform's official MCP command. If it has no MCP command, add this i
 }
 ```
 
+Note: `type: "http"` identifies the MCP transport. The actual connection is
+encrypted because the endpoint URL uses `https://`; do not change the type to
+`"https"`.
+
 Use the official Trading Bot HTTPS MCP endpoint shown above. Save the configuration, restart the agent or reconnect MCP, and complete OAuth authorization when prompted.
 
 Install a standalone Skill only when the official instructions support it. There is no universal one-command installer across agent platforms; use an official platform-specific command.
@@ -54,6 +60,8 @@ Install a standalone Skill only when the official instructions support it. There
 ## Updates
 
 ### Codex
+
+Use these commands only when the `trading-bot-plugins` marketplace and `trading-bot` plugin are already installed:
 
 ```bash
 codex plugin marketplace upgrade trading-bot-plugins
