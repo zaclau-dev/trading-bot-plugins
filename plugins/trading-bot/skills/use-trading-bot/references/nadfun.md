@@ -11,6 +11,8 @@ The adapter follows the official V3 integration: it asks the pinned Lens for bot
 
 For a buy, provide `token`, exact `monAmount`, and optional `maxSlippageBps`. For a sell, provide `token`, exact `tokenAmount`, and optional `maxSlippageBps`. Token amounts use the official 18-decimal nad.fun token format.
 
+The adapter does not impose a fixed MON buy ceiling or Token amount ceiling. Amounts must be positive and remain subject to the assigned wallet's balance, gas, allowance, Privy Policy, live quote, minimum-output, deadline, and simulation checks.
+
 A sell needs sufficient exact allowance for whichever Router Lens currently selects. When allowance is insufficient, preview `approve_token` first with the same Token and intended amount, obtain a fresh explicit confirmation, wait for that transaction to finalize, and then create a new sell preview. Graduation can change the selected Router, so never reuse an approval or preview blindly across a route change.
 
 Every buy or sell preview is a swap preview. Display its exact input, Lens quoted output, minimum output, selected Bonding Curve/DEX route, Router, slippage, deadline, gas and warning. Then end the turn and wait for a new explicit confirmation of that exact quote. Never confirm a buy or sell in the same turn as its preview; token approval confirmation is separate and does not authorize the sell.
