@@ -1,6 +1,6 @@
 # LeverUp adapter reference for Trading Bot
 
-This reference describes adapter version `0.7.0`. Values are runtime-pinned defaults, not timeless protocol facts.
+This reference describes adapter version `0.8.0`. Values are runtime-pinned defaults, not timeless protocol facts.
 
 ## Supported operations
 
@@ -38,23 +38,36 @@ MON. The adapter applies the pinned decimals and server limit for that asset.
 ## ERC-20 collateral approval
 
 Before opening with `LVMON`, `LVUSD`, `USDC`, or `LV`, preview and explicitly
-confirm a separate `approve_collateral` action for the exact collateral amount:
+confirm a separate `approve_collateral` action for the same intended market and
+collateral amount:
 
 ```json
 {
+  "market": "BTC/USD",
   "collateralAsset": "USDC",
   "collateralAmount": "100"
 }
 ```
 
-The spender is the pinned LeverUp Diamond. `MON` is native collateral and cannot
-be passed to `approve_collateral`. Never use an unlimited approval, combine the
-approval and open confirmations, or treat approval confirmation as permission to
-open a position.
+The adapter reads the market-specific oracle update and constructs a finite
+approval for `collateralAmount` plus the current `verifition_fee` raw Token units.
+For example, a 2-unit fee makes a 100 USDC approval `100.000002` USDC and a
+100 LVMON approval `100.000000000000000002` LVMON. Use the displayed
+`approvalAmount` and `approvalAmountRaw` as the source of truth; do not recompute
+them.
+
+The spender is the pinned LeverUp Diamond, not the Open Market Facet. The Facet
+executes through the Diamond, so the Diamond remains the ERC-20 `transferFrom`
+spender. `MON` is native collateral and cannot be passed to
+`approve_collateral`. Never use an unlimited approval, combine the approval and
+open confirmations, or treat approval confirmation as permission to open a
+position.
 
 After the approval succeeds, create a fresh `open_position` preview and require a
 new explicit confirmation. A pre-existing allowance is accepted only when it is
-at least the requested collateral amount.
+at least the displayed `requiredAllowanceAmount`, which includes the current
+Token fee. If that fee changes before the open preview, create and confirm a new
+finite approval preview.
 
 ## Open a position
 
@@ -76,7 +89,7 @@ optional and defaults to `MON`; `leverage` defaults to `2`; and
 `maxSlippageBps` defaults to `100`. Always use the capability declaration returned
 by `list_dapp_adapters` as the live contract.
 
-LVMON can be used directly as LeverUp collateral in adapter version `0.7.0`.
+LVMON can be used directly as LeverUp collateral in adapter version `0.8.0`.
 Swapping LVMON to MON through PancakeSwap is a separate optional workflow and is
 not required for a LeverUp position.
 
@@ -106,7 +119,8 @@ Before generating a plan, the adapter:
 - resolves the user-selected market from LeverUp's live pair list and requires `AVAILABLE` status;
 - reads trading, fee, and slippage settings for the selected pair from the Diamond;
 - applies per-asset decimals and collateral limits, then checks the selected wallet's balance;
-- requires sufficient allowance to the pinned LeverUp Diamond for ERC-20 collateral;
+- requires ERC-20 balance and allowance to the pinned LeverUp Diamond for
+  `collateralAmount` plus the live `extraFee` Token units;
 - pins collateral addresses, decimals, and bytecode hashes and rejects unsupported or changed token contracts;
 - checks native value as collateral plus oracle fees for MON and oracle fees only for ERC-20 collateral;
 - checks LeverUp's live direct-collateral switch, oracle, margin-token registration, and open cap for LV;
@@ -116,9 +130,11 @@ Before generating a plan, the adapter:
 - fetches the selected market price and the applicable collateral price, then fetches oracle update data for the selected pair;
 - caps the total oracle fee and simulates the exact transaction from the assigned wallet.
 
-For `approve_collateral`, the adapter constructs only an exact ERC-20 `approve`
-call to the pinned Diamond, with zero native value, after checking token identity,
-balance, amount, and the applicable LV state.
+For `approve_collateral`, the adapter requires the intended `market`, fetches its
+live oracle update, and constructs only a finite ERC-20 `approve` call to the
+pinned Diamond for collateral plus the current `verifition_fee` raw units, with
+zero native value. It first checks the market, token identity, balance, amount,
+fee ceiling, and applicable LV state.
 
 The server repeats the contract, asset mapping, amount, allowance, native value,
 facet/hash, and exact transaction simulation checks immediately before signing.
