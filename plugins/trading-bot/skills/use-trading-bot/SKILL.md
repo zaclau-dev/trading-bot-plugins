@@ -127,7 +127,7 @@ Read [references/leverup.md](references/leverup.md) when the selected project is
 
 Read [references/perpl.md](references/perpl.md) when the selected project is Perpl, the wallet needs AUSD approval/account setup, a position is being closed, a protocol check fails, or its adapter is being maintained.
 
-Read [references/nadfun.md](references/nadfun.md) when the selected project is nad.fun, a launched V2 token needs Router approval, graduation validation fails, a protocol check fails, or its adapter is being maintained.
+Read [references/nadfun.md](references/nadfun.md) when the selected project is nad.fun, a graduated V2 or V3 token needs Router approval, graduation validation fails, a protocol check fails, or its adapter is being maintained.
 
 Read [references/uniswap.md](references/uniswap.md) when the selected project is Uniswap, any token is being approved or swapped, a custom path/pool/router/calldata is requested, a quote is rejected, or its adapter is being maintained.
 

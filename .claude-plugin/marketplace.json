@@ -9,7 +9,7 @@
       "name": "trading-bot",
       "source": "./plugins/trading-bot",
       "description": "Trading Bot workflows for guarded actions across supported onchain adapters.",
-      "version": "0.9.0",
+      "version": "0.9.1",
       "author": {
         "name": "zaclau-dev"
       },
