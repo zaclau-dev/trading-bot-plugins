@@ -20,6 +20,8 @@ Always discover the live capability schema. `swap_exact_input` currently accepts
 
 `approve_token` takes a token, exact amount, onchain-verified decimals, and optional compatible router. It never creates an unlimited approval.
 
+The adapter does not impose a fixed AUSD or other token-amount ceiling. Inputs and approvals must be positive and remain subject to wallet balance, exact allowance, Privy Policy, live quote, minimum-output, slippage, price-impact, route, peg, gas, and simulation checks.
+
 Do not invent token addresses, decimals, fee tiers, pools, router addresses, symbols, or calldata. Use values the user supplied or values returned by discovery. Treat `MON` and WMON as distinct except for the adapter's endpoint wrapping/unwrapping behavior.
 
 ## Verification and quote behavior
