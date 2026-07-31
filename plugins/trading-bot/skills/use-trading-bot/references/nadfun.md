@@ -13,9 +13,9 @@ For a buy, provide `token`, exact `monAmount`, and optional `maxSlippageBps`. Fo
 
 The adapter does not impose a fixed MON buy ceiling or Token amount ceiling. Amounts must be positive and remain subject to the assigned wallet's balance, gas, allowance, Privy Policy, live quote, minimum-output, deadline, and simulation checks.
 
-A sell needs sufficient exact allowance for the Router selected by the pinned V2 Router or V3 Lens for that graduated Token. When allowance is insufficient, preview `approve_token` first with the same Token and intended amount, obtain a fresh explicit confirmation, wait for that transaction to finalize, and then create a new sell preview.
+A sell needs sufficient exact allowance for the Router selected by the pinned V2 Router or V3 Lens for that graduated Token. When allowance is insufficient, preview `approve_token` first with the same Token and intended amount, authorize that approval independently under the main Skill workflow, wait for that transaction to finalize, and then create a new sell preview.
 
-Every buy or sell preview is a swap preview. Display its exact input, official quoted output, minimum output, the returned `V2_DEX` or `V3_DEX` route, Router, slippage, deadline, gas and warning. Then end the turn and wait for a new explicit confirmation of that exact quote. Never confirm a buy or sell in the same turn as its preview; token approval confirmation is separate and does not authorize the sell.
+Every buy or sell preview is a swap preview. Display its exact input, official quoted output, minimum output, the returned `V2_DEX` or `V3_DEX` route, Router, slippage, deadline, gas and warning. Apply the confirmation source and assistant-turn timing from the main Skill: under Goal-delegated confirmation, confirm that exact displayed preview in the same turn; otherwise end the turn and wait for a later explicit user confirmation. Token approval authorization is separate and does not authorize the sell.
 
 ## Fail-closed checks
 

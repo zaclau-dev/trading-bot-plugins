@@ -37,9 +37,9 @@ MON. The adapter applies the pinned decimals and server limit for that asset.
 
 ## ERC-20 collateral approval
 
-Before opening with `LVMON`, `LVUSD`, `USDC`, or `LV`, preview and explicitly
-confirm a separate `approve_collateral` action for the same intended market and
-collateral amount:
+Before opening with `LVMON`, `LVUSD`, `USDC`, or `LV`, preview and independently
+authorize a separate `approve_collateral` action for the same intended market
+and collateral amount under the main Skill workflow:
 
 ```json
 {
@@ -60,14 +60,16 @@ The spender is the pinned LeverUp Diamond, not the Open Market Facet. The Facet
 executes through the Diamond, so the Diamond remains the ERC-20 `transferFrom`
 spender. `MON` is native collateral and cannot be passed to
 `approve_collateral`. Never use an unlimited approval, combine the approval and
-open confirmations, or treat approval confirmation as permission to open a
+open authorizations, or treat approval authorization as permission to open a
 position.
 
-After the approval succeeds, create a fresh `open_position` preview and require a
-new explicit confirmation. A pre-existing allowance is accepted only when it is
-at least the displayed `requiredAllowanceAmount`, which includes the current
-Token fee. If that fee changes before the open preview, create and confirm a new
-finite approval preview.
+After the approval succeeds, create a fresh `open_position` preview and obtain
+an independent confirmation source under the main Skill. Goal delegation may
+authorize both actions, but each action must use its own displayed preview and
+exact hash. A pre-existing allowance is accepted only when it is at least the
+displayed `requiredAllowanceAmount`, which includes the current Token fee. If
+that fee changes before the open preview, create and independently authorize a
+new finite approval preview.
 
 ## Open a position
 

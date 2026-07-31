@@ -1,6 +1,6 @@
 {
   "name": "trading-bot",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Use Trading Bot to discover, preview, confirm, and execute guarded actions through supported onchain adapters and assigned Privy wallets.",
   "author": {
     "name": "zaclau-dev",
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Trading Bot",
     "shortDescription": "Guarded trading workflows across supported dApps.",
-    "longDescription": "Trading Bot provides a shared natural-language workflow over supported onchain adapters and assigned Privy wallets. Every state-changing action is validated, simulated, shown as an immutable short-lived plan, and requires a separate confirmation before the MCP service queues it for the guarded Executor.",
+    "longDescription": "Trading Bot provides a shared natural-language workflow over supported onchain adapters and assigned Privy wallets. Every state-changing action is validated, simulated, shown as an immutable short-lived plan, and requires a separate per-action confirmation from either the user or an applicable active Codex Goal before the MCP service queues it for the guarded Executor.",
     "developerName": "zaclau-dev",
     "category": "Productivity",
     "capabilities": [

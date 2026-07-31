@@ -32,8 +32,8 @@ The legacy MON/AUSD actions retain their additional best-route search, independe
 
 Custom tokens, pools, and routes may be illiquid, malicious, or misleading. Display the actual addresses, verified pools, Router, path, fee tiers, symbols, exact input, quote, minimum output, price impact, gas, simulation, and all warnings. Never imply that Factory registration proves a token is safe.
 
-## Mandatory two-turn confirmation
+## Per-action confirmation
 
-Every swap preview contains `requiresExplicitConfirmation: true` and a canonical `swapQuote`. Display it verbatim, ask the adapter-provided confirmation question, and end the assistant turn. Never call `confirm_dapp_action` in the preview turn. Only a later explicit confirmation of that exact displayed plan permits confirmation.
+Every swap preview contains `requiresExplicitConfirmation: true` and a canonical `swapQuote`. Display it verbatim and apply the confirmation source and assistant-turn timing from the main Skill. Under Goal-delegated confirmation, call `confirm_dapp_action` for that exact displayed preview in the same turn. Otherwise ask the adapter-provided confirmation question, end the assistant turn, and wait for a later explicit user confirmation.
 
-An ERC-20 approval is a separate action. Approval confirmation never counts as swap confirmation, and changing any token, path, fee, pool, router, calldata, amount, quote, wallet, or adapter version requires a fresh preview and a new confirmation.
+An ERC-20 approval is a separate action. Its authorization never counts as swap authorization, and changing any token, path, fee, pool, router, calldata, amount, quote, wallet, or adapter version requires a fresh preview and an independent confirmation source under the main Skill.

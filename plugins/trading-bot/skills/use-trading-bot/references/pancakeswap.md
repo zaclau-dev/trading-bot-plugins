@@ -14,19 +14,21 @@ defaults, not timeless protocol facts.
 For an exact LVMON amount:
 
 1. When allowance is insufficient, preview `approve_lvmon` with
-   `lvmonAmount`, display the exact Router allowance, obtain a separate explicit
-   confirmation, and wait for that approval to finalize.
+   `lvmonAmount`, display the exact Router allowance, authorize that approval
+   independently under the main Skill, and wait for it to finalize.
 2. Create a new `swap_lvmon_to_mon` preview with the same `lvmonAmount` and
    optional `maxSlippageBps`.
 3. Display the adapter-provided exact input, quoted MON output, enforceable
    minimum MON output, fixed route, pool, price impact, slippage, deadline,
    network fee, simulation result, and all warnings.
-4. Ask the adapter-provided confirmation question and end the turn. Only a new
-   explicit confirmation of that exact quote permits `confirm_dapp_action`.
+4. Apply the confirmation source and assistant-turn timing from the main Skill.
+   Under Goal-delegated confirmation, confirm that exact displayed preview in
+   the same turn. Otherwise ask the adapter-provided confirmation question, end
+   the turn, and wait for a later explicit user confirmation.
 
 The fixed route is LVMON to WMON through the pinned PancakeSwap v3 pool, followed
 by WMON unwrapping to native MON in the same Router multicall. Approval
-confirmation never authorizes the later swap.
+authorization never authorizes the later swap.
 
 ## Fail-closed checks
 

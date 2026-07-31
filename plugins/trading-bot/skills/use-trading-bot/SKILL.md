@@ -9,6 +9,8 @@ For normal discovery, preview, confirmation, and status operations, use only the
 
 Treat live MCP responses as the source of truth. Use this precedence order: live adapter capability and preview, then the selected protocol reference, then examples in this Skill. Never assume that a project, action, market, parameter, default, or adapter version is supported without discovering it from the server. If a reference conflicts with a live capability or preview, stop and report a possible client/server version mismatch; never guess which value to use.
 
+Use this Skill as the sole authority for confirmation sources and assistant-turn timing. Protocol references may require separate actions, fresh previews, or additional safety checks, but they must not require a later user message when **Goal-delegated confirmation** applies. In a protocol reference, “explicit,” “new,” “fresh,” or “separate” confirmation means an independent authorization for that exact preview; obtain it from either a later user message or an applicable active Goal as defined here.
+
 ## Route the request
 
 Classify the user's request before calling tools:
@@ -25,12 +27,23 @@ An active persisted Codex Goal is a valid delegated confirmation source when its
 
 When Goal-delegated confirmation applies:
 
-- Use it only for wallets, Projects, dApps, objectives, and constraints stated in the active Goal. When the Goal explicitly delegates action and parameter decisions, select only from live adapter capabilities, markets, owned positions, declared defaults, and current wallet state. Follow the Goal's optimization objective; when it asks to minimize cost or loss and gives no amount, use the smallest live executable amount consistent with completing the requested interaction.
+- Use it only for wallets, Projects, dApps, objectives, amounts or budgets, deadlines, and failure handling stated or bounded by the active Goal. When the Goal explicitly delegates action and parameter decisions, select only from live adapter capabilities, markets, owned positions, declared defaults, and current wallet state. Follow the Goal's optimization objective; when it asks to minimize cost or loss and gives no amount, use the smallest live executable amount consistent with completing the requested interaction.
 - Present the complete preview required by this Skill, then call `confirm_dapp_action` with that preview's exact `actionId` and `actionHash` in the same assistant turn. Do not ask the user to confirm and do not stop merely to obtain another user message.
 - Reuse the delegation independently for each later in-scope preview while that Goal remains active. Every transaction still requires its own fresh preview, exact hash, server validity checks, and `confirm_dapp_action` call; the Goal does not turn one plan hash into approval for another.
+- Interpret `requiresExplicitConfirmation: true` as requiring the complete preview and a distinct `confirm_dapp_action` call. It does not require a later user message when Goal-delegated confirmation applies.
 - Stop using the delegation when the Goal is paused, edited so the authorization is removed, cleared, or completed. Also stop and ask the user when an action would expand beyond the Goal's stated scope or limits, or when the Goal leaves a genuinely necessary choice unresolved and no conservative in-scope choice exists.
 - Never use Goal delegation to override an expired preview, failed simulation, missing or inconsistent swap data, disabled execution flag, adapter/version mismatch, balance or ownership failure, permission limit, or any other hard stop in this Skill or the live server response.
 - This is application-level transaction authorization. It does not bypass or promise to bypass any Codex platform approval that may still be required for a destructive MCP tool call.
+
+### Goal execution loop
+
+When a Goal covers multiple wallets or dependent actions:
+
+1. Unless the Goal explicitly requires another safe ordering, prepare one action at a time and create its preview immediately before presenting and confirming it. Do not accumulate short-lived previews while earlier actions are waiting.
+2. After `confirm_dapp_action`, use the returned `tradeId` to obtain the status required by the next step. Wait for an approval or other dependency to succeed before creating the dependent action's fresh preview.
+3. Apply the Goal's retry and skip rules independently to each action. When the Goal does not resolve a failed action and no conservative in-scope choice exists, stop and ask instead of inventing a retry policy.
+4. If a preview expires before confirmation, discard it and create a fresh preview. Reuse the active Goal delegation for the new exact hash; the absence of a later user message is not a blocker.
+5. Record a terminal result or an authorized skip for every scoped action. Do not mark the Goal complete while required wallets or dependent actions remain unaccounted for.
 
 ## Preview and execution workflow
 
