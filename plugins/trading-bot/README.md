@@ -8,7 +8,7 @@ Trading Bot ships one shared skill and MCP connection for Codex and Claude Code.
 - Marketplace: `trading-bot-plugins`
 
 The production MCP endpoint is
-`https://trading-bot-five-pink.vercel.app/mcp`. It is shared by `.mcp.json`,
+`https://trading-bot-v2-sepia.vercel.app/mcp`. It is shared by `.mcp.json`,
 `skills/use-trading-bot/agents/openai.yaml`, and the connection-recovery steps
 in `skills/use-trading-bot/SKILL.md`.
 
@@ -17,7 +17,7 @@ in `skills/use-trading-bot/SKILL.md`.
 Codex first-time installation:
 
 ```bash
-codex plugin marketplace add zaclau-dev/trading-bot-plugins --ref main
+codex plugin marketplace add zaclau-dev/trading-bot-plugins --ref v2
 codex plugin add trading-bot@trading-bot-plugins
 ```
 

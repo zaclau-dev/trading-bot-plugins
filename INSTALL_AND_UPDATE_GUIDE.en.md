@@ -19,7 +19,7 @@ MCP Tool Schemas are loaded automatically when the client connects. No separate 
 For a first-time installation on a new machine, run both commands in order:
 
 ```bash
-codex plugin marketplace add zaclau-dev/trading-bot-plugins --ref main
+codex plugin marketplace add zaclau-dev/trading-bot-plugins --ref v2
 codex plugin add trading-bot@trading-bot-plugins
 ```
 
@@ -43,7 +43,7 @@ Prefer the platform's official MCP command. If it has no MCP command, add this i
   "mcpServers": {
     "trading-bot": {
       "type": "http",
-      "url": "https://trading-bot-five-pink.vercel.app/mcp"
+      "url": "https://trading-bot-v2-sepia.vercel.app/mcp"
     }
   }
 }

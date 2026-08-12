@@ -1,6 +1,6 @@
 {
   "name": "trading-bot",
-  "version": "1.0.4+codex.20260811164115",
+  "version": "1.0.5+codex.20260812025057",
   "description": "Use Trading Bot to discover, preview, confirm, and execute guarded actions through supported onchain adapters and assigned Privy wallets.",
   "author": {
     "name": "zaclau-dev",

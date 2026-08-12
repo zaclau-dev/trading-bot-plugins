@@ -19,7 +19,7 @@ MCP Tool Schema 由客户端连接时自动读取，无需单独安装。
 外部新用户或新机器首次安装时，按顺序执行以下两条命令：
 
 ```bash
-codex plugin marketplace add zaclau-dev/trading-bot-plugins --ref main
+codex plugin marketplace add zaclau-dev/trading-bot-plugins --ref v2
 codex plugin add trading-bot@trading-bot-plugins
 ```
 
@@ -43,7 +43,7 @@ claude plugin install trading-bot@trading-bot-plugins
   "mcpServers": {
     "trading-bot": {
       "type": "http",
-      "url": "https://trading-bot-five-pink.vercel.app/mcp"
+      "url": "https://trading-bot-v2-sepia.vercel.app/mcp"
     }
   }
 }

@@ -9,7 +9,7 @@ dependencies:
       value: "trading-bot"
       description: "Configured project-adapter preview and execution service"
       transport: "streamable_http"
-      url: "http://localhost:3000/mcp"
+      url: "https://trading-bot-v2-sepia.vercel.app/mcp"
 
 policy:
   allow_implicit_invocation: true

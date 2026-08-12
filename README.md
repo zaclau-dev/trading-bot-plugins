@@ -30,7 +30,7 @@ For a first-time installation, add the public marketplace before installing
 the plugin:
 
 ```bash
-codex plugin marketplace add zaclau-dev/trading-bot-plugins --ref main
+codex plugin marketplace add zaclau-dev/trading-bot-plugins --ref v2
 codex plugin add trading-bot@trading-bot-plugins
 ```
 
@@ -62,7 +62,7 @@ Start a new session after installation.
 ## Local development
 
 The committed production MCP URL is
-`https://trading-bot-five-pink.vercel.app/mcp`. Local integration testing may
+`https://trading-bot-v2-sepia.vercel.app/mcp`. Local integration testing may
 temporarily override it in an uncommitted development configuration, but never
 commit a loopback URL to a release.
 
