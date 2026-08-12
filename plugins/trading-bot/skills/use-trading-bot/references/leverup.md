@@ -1,6 +1,6 @@
 # LeverUp adapter reference for Trading Bot
 
-This reference describes adapter version `0.8.0`. Values are runtime-pinned defaults, not timeless protocol facts.
+This reference describes adapter version `0.8.1`. Values are runtime-pinned defaults, not timeless protocol facts.
 
 ## Supported operations
 
@@ -91,7 +91,7 @@ optional and defaults to `MON`; `leverage` defaults to `2`; and
 `maxSlippageBps` defaults to `100`. Always use the capability declaration returned
 by `list_dapp_adapters` as the live contract.
 
-LVMON can be used directly as LeverUp collateral in adapter version `0.8.0`.
+LVMON can be used directly as LeverUp collateral in adapter version `0.8.1`.
 Swapping LVMON to MON through PancakeSwap is a separate optional workflow and is
 not required for a LeverUp position.
 
@@ -127,7 +127,7 @@ Before generating a plan, the adapter:
 - checks native value as collateral plus oracle fees for MON and oracle fees only for ERC-20 collateral;
 - checks LeverUp's live direct-collateral switch, oracle, margin-token registration, and open cap for LV;
 - checks adapter-wide leverage, market, action, and direction limits; Privy Policies provide the wallet-level authorization boundary;
-- requires the exact project Owner, wallet Policy, KMS signer, and signer override Policy;
+- requires the exact project Owner, wallet Policy, execution signer, and signer override Policy;
 - resolves `openMarketTradeV2` and `closeTrade` through Diamond Loupe and compares the facet and bytecode hash with pinned values;
 - fetches the selected market price and the applicable collateral price, then fetches oracle update data for the selected pair;
 - caps the total oracle fee and simulates the exact transaction from the assigned wallet.
@@ -140,6 +140,11 @@ fee ceiling, and applicable LV state.
 
 The server repeats the contract, asset mapping, amount, allowance, native value,
 facet/hash, and exact transaction simulation checks immediately before signing.
+
+Adapter `0.8.1` pins the current LeverUp Monad trading facet used by both
+`openMarketTradeV2` and `closeTrade`. The public action parameters and calldata
+ABI are unchanged from `0.8.0`; this release restores compatibility after the
+Diamond moved those selectors to the upgraded facet.
 
 ## Maintenance triggers
 
@@ -160,7 +165,7 @@ Run `check:projects` before a production release and as a recurring deployment p
 ## Operator boundary
 
 The Plugin and Skill are distributable client instructions. Privy App credentials,
-KMS authorization signer, internal wallet IDs, operator mappings, plan database,
+server-side authorization signer, internal wallet IDs, operator mappings, plan database,
 and live-execution switch exist only in the hosted services. The Agent obtains
 short-lived OAuth tokens through browser authorization; the administrator never
 copies tokens or receives signing material.

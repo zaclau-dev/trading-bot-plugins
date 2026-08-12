@@ -2,7 +2,7 @@
   "mcpServers": {
     "trading-bot": {
       "type": "http",
-      "url": "https://trading-bot-five-pink.vercel.app/mcp"
+      "url": "http://localhost:3000/mcp"
     }
   }
 }
