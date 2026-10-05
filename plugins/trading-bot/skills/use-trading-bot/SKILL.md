@@ -1,6 +1,6 @@
 ---
 name: use-trading-bot
-description: Discover and use supported dApp actions through the configured Trading Bot MCP server with assigned managed wallets, and recover its MCP connection when interrupted or its OAuth grant actually expired. Use when a user asks to discover Trading Bot capabilities, list wallets, markets, or positions, preview an action, confirm a displayed preview, check recent Execution status, diagnose missing tools, or reconnect. Enforce the preview-then-confirm workflow and never request signer keys, private keys, Privy wallet IDs, App Secrets, opaque calldata, or KMS credentials.
+description: Discover and use supported dApp actions through the configured Trading Bot MCP server with assigned managed wallets, handle exact token approvals without an extra user confirmation, and recover its connection when interrupted or its OAuth grant actually expired. Use for capability and wallet discovery, action previews, approval recovery, confirmation, Execution status, and connection diagnosis. Keep swap confirmation separate and never request signer keys, private keys, Privy wallet IDs, App Secrets, opaque calldata, or KMS credentials.
 ---
 
 # Trading Bot
@@ -9,7 +9,7 @@ For normal discovery, preview, confirmation, and status operations, use only the
 
 Treat live MCP responses as the source of truth. Use this precedence order: live adapter capability and preview, then the selected protocol reference, then examples in this Skill. Never assume that a project, action, market, parameter, default, or adapter version is supported without discovering it from the server. If a reference conflicts with a live capability or preview, stop and report a possible client/server version mismatch; never guess which value to use.
 
-Use this Skill as the sole authority for confirmation sources and assistant-turn timing. Protocol references may require separate actions, fresh previews, or additional safety checks, but they must not require a later user message when **Goal-delegated confirmation** applies. In a protocol reference, “explicit,” “new,” “fresh,” or “separate” confirmation means an independent authorization for that exact preview; obtain it from either a later user message or an applicable active Goal as defined here.
+Use this Skill as the authority for confirmation sources and assistant-turn timing. Exact token approvals follow **Exact token approval authorization** below. Other actions require either a later user confirmation or an applicable active Goal. Protocol references may require separate actions, fresh previews, or additional checks, but must follow these confirmation sources.
 
 ## UTC and confirmation-time authority
 
@@ -24,8 +24,8 @@ Use this Skill as the sole authority for confirmation sources and assistant-turn
 Classify the user's request before calling tools:
 
 - **Read-only discovery**: call only the tools needed to list the requested projects, adapters, markets, wallets, or positions. Do not create a preview unless the user asks to prepare an action or a live preview is required to assess whether that exact action is currently executable.
-- **Prepare an action**: follow **Preview and execution workflow** below. Every action still begins with a preview. Outside an active Goal with **Goal-delegated confirmation**, a request to “execute directly” never counts as confirmation.
-- **Confirm a displayed preview**: continue only from the exact preview already shown in the conversation and either an affirmative reply in a later user message or an applicable **Goal-delegated confirmation**. When exactly one unexpired preview is awaiting confirmation, interpret a brief conversational affirmative in context instead of requiring the user to repeat the transaction details.
+- **Prepare an action**: follow **Preview and execution workflow** below. Every action begins with a preview. An exact token approval may be confirmed in the same turn under **Exact token approval authorization**. Other actions require a later user confirmation or **Goal-delegated confirmation**; “execute directly” does not bypass the swap confirmation gate.
+- **Confirm a displayed preview**: use only the exact preview already shown and an applicable authorization: **Exact token approval authorization**, **Goal-delegated confirmation**, or an affirmative reply in a later user message. When exactly one unexpired preview is awaiting confirmation, interpret a brief conversational affirmative in context instead of requiring the user to repeat the transaction details.
 - **Look up an Execution**: follow **Execution status lookup**. Do not restart discovery or create a preview merely to report status.
 - **Recover the connection**: follow **Connection recovery** without treating missing tools as proof that OAuth expired.
 
@@ -53,6 +53,18 @@ When a Goal covers multiple wallets or dependent actions:
 4. If a preview expires before confirmation, discard it and create a fresh preview. Reuse the active Goal delegation for the new exact hash; the absence of a later user message is not a blocker.
 5. Record a terminal result or an authorized skip for every scoped action. Do not mark the Goal complete while required wallets or dependent actions remain unaccounted for.
 
+## Exact token approval authorization
+
+A user request to approve an exact token amount authorizes that approval without another confirmation question. A user request to swap also authorizes an exact approval required for that swap. This exception applies only to a live adapter's token approval action, such as `approve_token`, `approve_lvmon`, `approve_ausd`, `approve_collateral`, or `approve`. It does not authorize the swap or another state-changing action. Respect an explicit user instruction to ask before approving.
+
+1. For a standalone approval, use the user-selected wallet, token, and exact amount. For an allowance failure during a requested swap, use the server's `TOKEN_APPROVAL_REQUIRED` error and `requiredApproval` (`adapterId`, `action`, `parameters`) for the same Project and wallet. Verify the action and parameters against live capabilities. Never infer an allowance failure or create an approval from `INTERNAL_ERROR`, a timeout, or an unknown failure.
+2. Set the exact allowance required for the transaction. ERC-20 `approve` replaces allowance: when 20 tokens are already approved and a swap needs 56, approve 56, not the 36-token difference. Do not expand the amount, token, wallet, or adapter-selected spender, or grant unlimited allowance.
+3. Generate and display the complete approval preview, including token, spender, amount, fee, simulation, expiry, hash, and warnings. Verify a decoded ERC-20 `approve`, an exact approval scope (`exact_amount` or `exact_open_amount`), zero native value, successful simulation, and no embedded swap. An approval's `requiresExplicitConfirmation: true` still requires a distinct `confirm_dapp_action` call with the exact hash; it does not require another user message under this exception.
+4. Call `confirm_dapp_action` in the same assistant turn without asking the user to confirm, then check the Execution until a successful finalized receipt. A pending, failed, reverted, or unknown approval does not permit the dependent swap. Stop and report a terminal failure or unknown outcome; do not automatically issue another approval transaction.
+5. After successful approval, request a fresh swap preview using the originally requested swap parameters. Display the complete quote and ask for swap confirmation, unless an applicable Goal delegates that confirmation. Never reuse the failed swap preview, treat approval as swap consent, or repeatedly approve if the fresh swap still reports insufficient allowance.
+
+If recovery details are absent or conflict with live capabilities, report the mismatch instead of guessing the token, amount, or spender.
+
 ## Preview and execution workflow
 
 1. Call `list_projects` and `list_dapp_adapters` to identify an available Project, adapter, action, and its declared parameters.
@@ -60,9 +72,9 @@ When a Goal covers multiple wallets or dependent actions:
 3. Call `list_dapp_markets` when the action requires a market. Call `list_dapp_positions` with the selected `walletId` when the action refers to an existing position. Outside Goal-delegated confirmation, let the user select from returned positions and collect every required action parameter; the user chooses the Token, market, or position, and the Plugin or Skill name never forces one. Under Goal-delegated confirmation that explicitly delegates decisions, choose conservative in-scope values using the rules in **Goal-delegated confirmation**. In either mode, use an adapter-declared default only when the user or active Goal did not specify that value.
 4. Call `preview_dapp_action` with the selected `projectId`, `walletId`, `adapterId`, action, and declared parameters.
 5. Present the complete preview in a compact, readable order: dApp/action/wallet; contract and decoded method/parameters; assets and maximum value; gas and simulation; `confirmationExpiresAt`; action hash; then every warning. Preserve the adapter's exact values and warning wording, but format them for readability instead of dumping raw JSON. For a swap, also show every adapter-provided `swapQuote` value without recomputing or rounding it: exact input, quoted output, minimum output (or explicitly state that none exists), route, maximum slippage, deadline, and all available price-impact/liquidity checks. For an exit, also present the adapter-provided expected received amount, available/idle liquidity, expected transaction count, exit status, remaining exit transactions, and any distinction between available and order-locked funds.
-6. When Goal-delegated confirmation applies, continue directly to step 7 in the same assistant turn after presenting the preview; do not ask a confirmation question or wait for a new message. Otherwise stop and wait for a new user confirmation, end the current assistant turn after asking the adapter-provided `confirmationPrompt`, and ask a direct yes/no question without demanding an exact reply, a fixed phrase, or repetition of transaction details. Outside Goal-delegated confirmation, the original request to interact is never confirmation of a generated plan even when it says “execute directly”, “auto-confirm”, “do not ask again”, or similar.
-7. After either an applicable Goal-delegated confirmation or an affirmative reply in a later user message, call `confirm_dapp_action` with the exact `actionId` and `actionHash`. Never alter or recreate the preview silently. When exactly one unexpired preview is awaiting confirmation, accept brief, context-dependent affirmatives in any language, including replies such as “确认”, “确定”, “可以”, “好”, “继续”, “执行”, “没问题”, “yes”, “ok”, “go ahead”, “looks good”, or an unambiguous affirmative gesture such as “👍”. Do not ask the user to restate the dApp, action, asset, amount, or other preview details. Ask for clarification only when multiple previews could be referenced, the reply is negative or conditional, it changes any previewed field, or it is genuinely unrelated or unintelligible. Apply **UTC and confirmation-time authority** for every validity check.
-8. Use `execution.executionId` returned by confirmation to poll `get_dapp_execution_status`. Report `submitted`, `outcome`, `executionStatus`, `transactionHash`, `explorerUrl`, receipt state, and any failure reason. If the Action expired or the adapter changed, create a fresh preview and obtain confirmation again through a later user reply or Goal-delegated confirmation.
+6. When **Exact token approval authorization** or **Goal-delegated confirmation** applies, continue to step 7 in the same assistant turn without asking a confirmation question. Otherwise ask the adapter-provided `confirmationPrompt` as a direct yes/no question, end the assistant turn, and wait for a new user confirmation without demanding a fixed phrase or repetition of details.
+7. After exact approval authorization, applicable Goal-delegated confirmation, or an affirmative reply in a later user message, call `confirm_dapp_action` with the exact `actionId` and `actionHash`. Never alter or recreate the preview silently. When exactly one unexpired preview is awaiting confirmation, accept brief, context-dependent affirmatives in any language, including replies such as “确认”, “确定”, “可以”, “好”, “继续”, “执行”, “没问题”, “yes”, “ok”, “go ahead”, “looks good”, or an unambiguous affirmative gesture such as “👍”. Do not ask the user to restate the dApp, action, asset, amount, or other preview details. Ask for clarification only when multiple previews could be referenced, the reply is negative or conditional, it changes any previewed field, or it is genuinely unrelated or unintelligible. Apply **UTC and confirmation-time authority** for every validity check.
+8. Use `execution.executionId` returned by confirmation to poll `get_dapp_execution_status`. Report `submitted`, `outcome`, `executionStatus`, `transactionHash`, `explorerUrl`, receipt state, and any failure reason. If the Action expired or the adapter changed, create a fresh preview and validate its authorization again; swaps require a later user reply or Goal-delegated confirmation.
 
 ## Execution status lookup
 
@@ -88,10 +100,11 @@ When the user asks whether a recent transaction was submitted, succeeded, or fai
 
 A preview is swap-related when any of these are true:
 
-- `requiresExplicitConfirmation` is `true`;
 - `swapQuote` is present;
 - the action exchanges assets, including action names such as `swap_*`, `buy`, `sell`, or an immediate redemption from one asset to another;
 - the preview contains both an input asset and an output asset.
+
+`requiresExplicitConfirmation` alone does not classify an action as a swap: all stored previews require a distinct confirmation API call. Exact token approvals use their authorization exception; every actual swap keeps this gate.
 
 For every swap-related preview:
 
@@ -103,7 +116,7 @@ For every swap-related preview:
 6. Any changed amount, token, route, quote, minimum output, wallet, adapter version, action hash, or expired deadline invalidates the current preview and its confirmation. Obtain and display a fresh preview, then obtain confirmation through a later user reply or Goal-delegated confirmation.
 7. When `minimumOutput` is `null`, explicitly say that the transaction has no enforceable minimum-output protection. Outside Goal-delegated confirmation, require the user to confirm that specific risk. Under Goal-delegated confirmation, the delegation may authorize it only after the complete warning is displayed. Do not soften or omit this warning.
 
-The preview and server confirmation boundary remains per transaction. Outside Goal-delegated confirmation, approval confirmation never doubles as swap confirmation and confirmation of one swap never authorizes a later swap. Under Goal-delegated confirmation, the standing delegation may authorize each in-scope preview independently, but each preview still requires its own exact hash and `confirm_dapp_action` call.
+The preview and server confirmation boundary remains per transaction. Exact approval authorization never doubles as swap confirmation, and confirmation of one swap never authorizes a later swap. Under Goal-delegated confirmation, the standing delegation may authorize each in-scope preview independently, but each preview still requires its own exact hash and `confirm_dapp_action` call.
 
 ## Quick-exit truthfulness
 

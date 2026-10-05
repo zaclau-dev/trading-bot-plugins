@@ -1,6 +1,6 @@
 # PancakeSwap Monad adapter reference for Trading Bot
 
-This reference describes adapter version `0.1.0`. Values are runtime-pinned
+This reference describes adapter version `0.1.1`. Values are runtime-pinned
 defaults, not timeless protocol facts.
 
 - Adapter ID: `pancakeswap` (the Project ID comes from `list_projects`)
@@ -13,9 +13,11 @@ defaults, not timeless protocol facts.
 
 For an exact LVMON amount:
 
-1. When allowance is insufficient, preview `approve_lvmon` with
-   `lvmonAmount`, display the exact Router allowance, authorize that approval
-   independently under the main Skill, and wait for it to finalize.
+1. An insufficient allowance returns `TOKEN_APPROVAL_REQUIRED` with
+   `requiredApproval` for `approve_lvmon` and the full intended `lvmonAmount`.
+   Display the exact Router approval preview and confirm it in the same turn
+   without another user question under the main Skill's exact approval rule.
+   Wait for successful finalization. Standalone exact approvals use this rule too.
 2. Create a new `swap_lvmon_to_mon` preview with the same `lvmonAmount` and
    optional `maxSlippageBps`.
 3. Display the adapter-provided exact input, quoted MON output, enforceable
