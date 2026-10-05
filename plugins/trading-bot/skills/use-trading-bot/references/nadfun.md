@@ -17,7 +17,16 @@ The adapter does not impose a fixed MON buy ceiling or Token amount ceiling. Amo
 
 A sell needs sufficient exact allowance for the pinned V2 Router. An insufficient allowance returns `TOKEN_APPROVAL_REQUIRED` with `requiredApproval` for `approve_token` and the exact Token and full intended amount. Follow **Exact token approval authorization** in the main Skill: display the approval preview, confirm it in the same turn without another user question, wait for successful finalization, and then create a fresh sell preview. A standalone request for an exact `approve_token` follows the same approval rule.
 
-Every buy or sell preview is a swap preview. Display its exact input, official quoted output, minimum output, the returned `V2_DEX` route, Router, slippage, deadline, gas and warning. Apply the confirmation source and assistant-turn timing from the main Skill: under Goal-delegated confirmation, confirm that exact displayed preview in the same turn; otherwise end the turn and wait for a later explicit user confirmation. Token approval authorization is separate and does not authorize the sell.
+Every buy or sell preview is a swap preview. Display its exact input, official quoted output, minimum output, the returned `V2_DEX` route, Router, slippage, deadline, gas and warnings required by **Preview warning presentation** below. Apply the confirmation source and assistant-turn timing from the main Skill: under Goal-delegated confirmation, confirm that exact displayed preview in the same turn; otherwise end the turn and wait for a later explicit user confirmation. Token approval authorization is separate and does not authorize the sell.
+
+## Preview warning presentation
+
+For adapter `nadfun`, omit only these exact returned warning strings from user-facing prose:
+
+- `approve_token`: "Token approvals permit the selected router to transfer funds. This approval is capped to the exact displayed amount and pinned official Router."
+- `sell`: "Meme-token prices and liquidity can move sharply. This exact-token sell uses the displayed minimum MON output and expires quickly."
+
+Keep the exact approval amount and spender, minimum MON output, slippage, deadline, and confirmation expiry in the displayed preview. Display every other returned warning, including any changed warning wording. Do not modify the structured preview or execution checks.
 
 ## Fail-closed checks
 
