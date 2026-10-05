@@ -28,3 +28,19 @@ Every buy or sell preview is a swap preview. Display its exact input, official q
 - Recipient is always the assigned wallet; approval is exact-amount only.
 - Every trade has an immutable minimum output and short deadline.
 - Before broadcast, the adapter repeats protocol hash, graduation, quote, deadline, balance, allowance, slippage-floor, and simulation checks.
+
+## Dashboard BNCB market registration
+
+Dashboard nad.fun V2 discovery also checks fixed BNCB quote identities: Monad mainnet (143) `0x094aDB9ab02Ed230697297C219073DC8C69Df0DF` and Monad Testnet (10143) `0x4C0920638766D229B99aE7B75E7187cE798F567C`. The testnet contract reports BNC4; nad.fun and Dashboard use the BNCB venue label. Addresses and runtime code hashes are pinned in service configuration. Existing WMON/LVMON discovery remains supported.
+
+The mainnet BNCB token is token0 of user-selected PancakeSwap reference pool `0x1d5F026CC3Ba68da7251976d65c61a7351667A3A`; that reference pool is not a nad.fun market or a token address. Market registration still requires a graduated base token and an eligible pool from the pinned nad.fun Factory.
+
+Order Engine execution capability is derived from the registered market network and venue. New non-equivalent quotes support direct-quote LIMIT_PRICE orders and ACCUMULATION, TWAP_SELL, SELL_TRIGGER_BUY and BUY_TRIGGER_SELL strategies on nad.fun V2 on Monad mainnet (143) and Testnet (10143). Quote, wallet and receipt reads select the RPC and pinned Router for that market chain. New-quote Grid and IMMEDIATE remain unsupported; other networks or venues report QUOTE_EXECUTION_UNSUPPORTED.
+
+Testnet BNCB-quoted markets additionally support MON buys through the pinned Router's path-bearing `buyWithNative` overload (selector `0x704edbd9`). For orders without an explicit payment choice, whole-order BNCB funding is tried first; only proven BNCB insufficiency permits evaluating MON. A failed balance read does not permit fallback. The Router performs conversion in one transaction. MON principal and Gas share the wallet's available native balance; the execution uses fresh routed quotes, immutable minimum output, a deadline, and simulation. Existing strategy and automatic-payment limits and budgets remain BNCB-denominated; manual payment selection is described below. Receipts record actual MON cash spent separately from BNCB-valued acquisition cost and intermediate BNCB input. **SELL receives BNCB, not MON**; `sellToNative` is not enabled for these markets. Mainnet BNCB native buys are not enabled by this change.
+
+Capability is not proof that a trade will succeed: market status, live chain/Router/pool identity, decimals, whole-order wallet balance, allowance, gas, fresh quote, and settlement checks still apply. Budget accounting uses the market quote identity and decimals independently of execution capability. This Dashboard addition does not add a testnet MCP action or change the MCP buy/sell contract above.
+
+## Dashboard manual buy payment selection
+
+For supported BNCB markets, the Dashboard manual limit buy accepts a fixed target-token quantity and a limit price in the selected MON or BNCB payment asset. The Order API persists optional `paymentAsset` (`MON` or `QUOTE`) and `paymentAmountAtomic`. Explicit choices never fall back to another payment asset; gas remains separately reserved in MON. The minimum base output rounds up to enforce the selected-asset limit. Split orders preserve the exact total requested target-token quantity; each payment cap is derived from that quantity and the selected-asset limit. Orders without these fields, including existing strategy Orders, retain their original quote-based behavior. These fields belong to the Dashboard Order Engine API, not the MCP `nadfun` action parameters above.

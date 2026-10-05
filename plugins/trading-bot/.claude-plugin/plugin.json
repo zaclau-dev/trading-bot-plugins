@@ -1,13 +1,19 @@
 {
   "name": "trading-bot",
-  "version": "1.0.5",
+  "version": "1.0.28",
   "description": "Use Trading Bot to discover, preview, confirm, and execute guarded actions through supported onchain adapters and assigned Privy wallets.",
   "author": {
     "name": "zaclau-dev"
   },
   "homepage": "https://github.com/zaclau-dev/trading-bot-plugins/tree/main/plugins/trading-bot",
   "repository": "https://github.com/zaclau-dev/trading-bot-plugins",
-  "keywords": ["onchain", "dapp", "monad", "privy", "mcp"],
+  "keywords": [
+    "onchain",
+    "dapp",
+    "monad",
+    "privy",
+    "mcp"
+  ],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json"
 }
