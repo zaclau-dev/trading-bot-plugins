@@ -47,9 +47,12 @@ The `/mcp` URL is a machine endpoint, not a login page. Let the MCP client
 initiate OAuth and never copy access tokens into chat, configuration files, or
 command arguments.
 
-- In Codex, reconnect a confirmed expired or revoked grant with
-  `codex mcp login trading-bot`.
+- In Codex, asking to use the plugin starts `codex mcp login trading-bot`
+  automatically when authorization is needed and a shell is available. Complete
+  sign-in and consent in the page opened by the client. Connection settings or
+  the manual command are fallbacks when automatic login cannot be started.
 - In Claude Code, open `/mcp`, select `trading-bot`, and complete
   authentication.
-- A service restart alone does not revoke a stored OAuth grant. If tools are
-  missing after the service returns, start a new task or session first.
+- If authorization is complete but the connection is unavailable, reconnect.
+  Start a new task or session only if the tools remain missing afterward.
+  A service restart alone does not revoke a stored OAuth grant.

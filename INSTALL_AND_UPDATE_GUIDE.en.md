@@ -68,7 +68,7 @@ codex plugin marketplace upgrade trading-bot-plugins
 codex plugin add trading-bot@trading-bot-plugins
 ```
 
-Start a new Codex task after updating. Run this only if authorization has expired:
+Start a new Codex task after updating. When login authorization is needed and a shell is available, the assistant starts the client's browser login automatically. Complete sign-in and consent in the opened page. If automatic initiation is unavailable, use the plugin's connection settings or run:
 
 ```bash
 codex mcp login trading-bot
@@ -81,7 +81,7 @@ claude plugin marketplace update trading-bot-plugins
 claude plugin update trading-bot@trading-bot-plugins
 ```
 
-Restart Claude Code or start a new session. If authorization has expired, open `/mcp`, select `trading-bot`, and authorize again.
+Restart Claude Code or start a new session. If login authorization is incomplete or has expired, open `/mcp`, select `trading-bot`, and complete authentication.
 
 ### Other agent platforms
 
@@ -97,6 +97,6 @@ Send this in a new task or session:
 List the projects and actions currently supported by Trading Bot. Do not execute any transaction.
 ```
 
-If the Trading Bot tools do not appear, check the Plugin installation, MCP endpoint, OAuth authorization, and network access to the MCP service.
+In Codex, the assistant starts the client's browser login when authorization is needed. After the page completes, wait for the client to confirm successful login. Use connection settings only if automatic initiation is unavailable. If tools remain unavailable after successful login, use a supported client connection refresh, or start a new chat when no refresh capability is exposed. Follow the retry delay when the login service is busy.
 
 > Never put access tokens, private keys, or wallet signing keys in chat or configuration files.

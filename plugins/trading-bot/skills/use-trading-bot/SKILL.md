@@ -1,11 +1,13 @@
 ---
 name: use-trading-bot
-description: Discover and use supported dApp actions through the configured Trading Bot MCP server with assigned managed wallets, handle exact token approvals without an extra user confirmation, and recover its connection when interrupted or its OAuth grant actually expired. Use for capability and wallet discovery, action previews, approval recovery, confirmation, Execution status, and connection diagnosis. Keep swap confirmation separate and never request signer keys, private keys, Privy wallet IDs, App Secrets, opaque calldata, or KMS credentials.
+description: Discover and use supported dApp actions through the configured Trading Bot MCP server with assigned managed wallets, handle exact token approvals without an extra user confirmation, and start the client's browser login when authorization is needed. Use for capability and wallet discovery, action previews, approval recovery, confirmation, Execution status, and login or connection help. Keep swap confirmation separate and never request signer keys, private keys, Privy wallet IDs, App Secrets, opaque calldata, or KMS credentials.
 ---
 
 # Trading Bot
 
-For normal discovery, preview, confirmation, and status operations, use only the `trading-bot` MCP tools. The MCP exposes a shared interface while each supported dApp owns an audited adapter. The client login commands in **Connection recovery** are the only exception.
+For normal discovery, preview, confirmation, and status operations, use only the `trading-bot` MCP tools. The MCP exposes a shared interface while each supported dApp owns an audited adapter. The client discovery and login commands in **Connection recovery** are the only exception.
+
+If the requested tools are unavailable, follow **Connection recovery** first. In Codex, initiate the client's browser login when needed rather than stopping at instructions to find connection settings.
 
 Treat live MCP responses as the source of truth. Use this precedence order: live adapter capability and preview, then the selected protocol reference, then examples in this Skill. Never assume that a project, action, market, parameter, default, or adapter version is supported without discovering it from the server. If a reference conflicts with a live capability or preview, stop and report a possible client/server version mismatch; never guess which value to use.
 
@@ -27,7 +29,7 @@ Classify the user's request before calling tools:
 - **Prepare an action**: follow **Preview and execution workflow** below. Every action begins with a preview. An exact token approval may be confirmed in the same turn under **Exact token approval authorization**. Other actions require a later user confirmation or **Goal-delegated confirmation**; “execute directly” does not bypass the swap confirmation gate.
 - **Confirm a displayed preview**: use only the exact preview already shown and an applicable authorization: **Exact token approval authorization**, **Goal-delegated confirmation**, or an affirmative reply in a later user message. When exactly one unexpired preview is awaiting confirmation, interpret a brief conversational affirmative in context instead of requiring the user to repeat the transaction details.
 - **Look up an Execution**: follow **Execution status lookup**. Do not restart discovery or create a preview merely to report status.
-- **Recover the connection**: follow **Connection recovery** without treating missing tools as proof that OAuth expired.
+- **Login or recover the connection**: follow **Connection recovery** and give the user the next login or reconnect step.
 
 ## Goal-delegated confirmation
 
@@ -52,6 +54,17 @@ When a Goal covers multiple wallets or dependent actions:
 3. Apply the Goal's retry and skip rules independently to each action. When the Goal does not resolve a failed action and no conservative in-scope choice exists, stop and ask instead of inventing a retry policy.
 4. If a preview expires before confirmation, discard it and create a fresh preview. Reuse the active Goal delegation for the new exact hash; the absence of a later user message is not a blocker.
 5. Record a terminal result or an authorized skip for every scoped action. Do not mark the Goal complete while required wallets or dependent actions remain unaccounted for.
+
+## Action failures
+
+Display the returned business error message so the user can identify and resolve the rejection:
+
+- `INSUFFICIENT_BALANCE` identifies insufficient token balance, margin, or native value/gas funds. Preserve available and required amounts when returned; funding is a prerequisite, not an approval request.
+- `TOKEN_APPROVAL_REQUIRED` identifies insufficient allowance and includes the exact `requiredApproval`. Follow **Exact token approval authorization** using those parameters and the same Project and wallet.
+- `ACTION_REJECTED` preserves a deliberate adapter rejection, such as existing debt, unavailable liquidity, protocol changes, or a risk limit. Report that reason and follow its supported next step.
+- `INTERNAL_ERROR` represents an unexpected internal or dependency failure whose raw details are private. Report the returned message without guessing a balance or allowance cause or starting an approval.
+
+An error is a failed operation, not a transaction preview. Obtain a fresh successful preview after resolving the cause.
 
 ## Exact token approval authorization
 
@@ -142,18 +155,29 @@ The preview and server confirmation boundary remains per transaction. Exact appr
 
 ## Connection recovery
 
-Do not equate missing tools, temporary service unavailability, or a stale task with an expired OAuth grant. Restarting or redeploying the configured Dashboard does not by itself revoke the PostgreSQL-backed OAuth client, refresh token, or signing key.
+In Codex, a request to use this plugin authorizes starting its client login when needed. Initiate it in the same assistant turn; a separate request to log in or a confirmation question is unnecessary. The user still completes sign-in and consent in the page opened by the client. Login authorization never authorizes a transaction.
 
-When `trading-bot` tools are missing or unavailable in Codex:
+Start login when the client requests authentication, a request fails for missing credentials, the user says authorization is incomplete, or OAuth reports `invalid_token`, `invalid_grant`, a revoked or expired refresh token, or a revoked login session. If the requested tools are missing and login state is unknown, try the configured client's login once as a connection recovery step without claiming an existing grant expired. When tools are available, continue the user's request normally.
 
-1. Treat the MCP server configured by the active client as the only endpoint authority. Never probe a hard-coded hosted, production, staging, or localhost URL; it may be unrelated to the installed plugin configuration.
-2. If the tools are absent from the current task, say that the task's MCP tool snapshot may be stale and ask the user to open a new task. Do not infer service health or OAuth state by calling an unrelated URL.
-3. If a `trading-bot` tool call reports transport or service unavailability, report that exact failure against the configured MCP server. Do not claim that authorization expired and do not start OAuth.
-4. Treat the grant as expired only when an MCP response or OAuth refresh explicitly reports `invalid_token`, `invalid_grant`, a revoked refresh token, or an expired refresh token. A Codex UI label such as “OAuth authenticated” only confirms that credentials are stored; it is not a live connection health check.
-5. For a confirmed OAuth failure, use the active client's supported login flow and never ask the user to copy a token:
-   - In Codex, run `codex mcp login trading-bot` when the user explicitly asks to reconnect.
-   - In Claude Code, ask the user to open `/mcp`, select `trading-bot`, and complete authentication.
-6. After authentication succeeds, ask the user to start a new Codex task or Claude Code session before retrying when the current tool snapshot remains stale.
+Use this Codex flow:
+
+1. Briefly say in the user's language: “正在打开 {插件名称} 的登录授权页面，请在页面中完成登录和授权。” Use the installed display name, such as Trading Bot or Trading Bot Local.
+2. Run `codex mcp login trading-bot` through the available shell tool in the same turn, without `--no-browser`. Use the active client's configured server name; if it differs, resolve it with `codex mcp list --json` using the installed plugin's MCP configuration. Inspect only the matching connection and keep unrelated configuration private. Keep the existing endpoint and scopes.
+3. Keep the login process alive while it waits for the browser callback and token exchange. If the client returns a login URL but cannot launch a browser, open that exact URL with an available browser-opening capability. The callback page saying “Authentication complete” only acknowledges the callback; it does not prove token exchange or credential storage succeeded. For CLI login, require exit code 0 and its successful-login result before claiming authorization succeeded. Never assemble an OAuth URL yourself.
+4. While authorization is pending, tell the user to complete the opened page. Reuse the pending login process instead of launching another. If it is canceled, fails, or times out, report the actionable reason and wait for the user to request another attempt.
+5. After authorization succeeds, use an exposed client connection-refresh capability if available, then retry the requested read-only operation when its tools are available. A separate CLI process may save credentials without refreshing this chat's running connection. Do not invent refresh commands or assume a different app-server process owns this chat. If this client exposes no refresh capability and tools remain unavailable, suggest a new chat to load the authorized connection. Do not start another login to refresh an already completed attempt.
+
+An OAuth `temporarily_unavailable` response or HTTP 429 means the authorization service is temporarily busy. Use its retry delay when provided and say “登录服务暂时繁忙，请稍后重试；暂时还没有完成连接。” Do not classify it as expired authorization or repeatedly open login. A token-exchange parse error does not prove the user rejected consent; report that the connection did not finish and retain the diagnostic details only when requested.
+
+Allow at most one automatic login attempt per plugin per chat; an explicit user request to retry permits another. If a transport or service failure is already known, explain the connection problem and its supported retry step. If an authenticated request is denied permission, explain that restriction. Neither condition is fixed by repeatedly opening login.
+
+When the client login cannot be started because the shell or login command is unavailable, give the shortest supported fallback: in Codex, the plugin's connection settings or `codex mcp login trading-bot`; in Claude Code, `/mcp`, then `trading-bot`, then authentication. Use this fallback only after establishing that automatic initiation is unavailable, rather than making every user find settings.
+
+Let the client complete the configured OAuth flow. Never ask the user to paste an access token or use the raw `/mcp` endpoint as a login page. Reauthentication never confirms, repeats, or retries a transaction. Keep routine messages focused on the opened page or an actionable failure; reserve tool snapshots, raw OAuth codes, and Skill quotations for explicitly requested technical diagnostics.
+
+Plugin access and refresh tokens are bound to the Dashboard login session used for consent. Signing out, replacing that login, or its expiry invalidates those tokens; the plugin must reconnect through the normal OAuth flow. A separate active login session keeps its own connections. Treat an explicit revoked-login-session response as an authentication failure and use the login flow above.
+
+Treat the MCP server configured by the active client as the only endpoint authority. Never probe a hard-coded hosted, production, staging, or localhost URL to infer the installed plugin's health or authorization. Missing tools alone do not prove an expired grant. A Codex “OAuth authenticated” label confirms stored credentials, not a successful live connection. Restarting or redeploying the Dashboard alone does not revoke its PostgreSQL-backed OAuth credentials.
 
 Read [references/leverup.md](references/leverup.md) when the selected project is LeverUp, a protocol check fails, or its adapter is being maintained.
 

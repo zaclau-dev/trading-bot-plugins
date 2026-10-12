@@ -9,6 +9,8 @@ Adapter version `0.1.0` is pinned to Aave V3 Monad mainnet USDC.
 
 Use an exact `approve` before `supply` when allowance is insufficient. Supply-only mode refuses a wallet that already has Aave debt. A `withdraw` preview reads the wallet aUSDC balance, total Aave debt, and current USDC reserve liquidity. It is executable only when debt is zero, the requested amount is covered by aUSDC, reserve liquidity is sufficient, and the exact transaction simulates.
 
+A `supply` with insufficient USDC returns `INSUFFICIENT_BALANCE` with the available and required amounts. Balance is checked before allowance: fund the wallet before attempting an approval. Insufficient allowance returns `TOKEN_APPROVAL_REQUIRED` with `requiredApproval` selecting `aave`, `approve`, and the full exact USDC amount, rather than the allowance shortfall.
+
 Display `expectedReceivedUsdc`, `availableLiquidityUsdc`, `expectedTransactions`, and `immediateExitStatus`. These are real-time results. Never say Aave guarantees future liquidity.
 
 The adapter pins Pool/aUSDC proxies, their EIP-1967 implementations, Pool implementation bytecode, USDC bytecode, chain ID, exact asset, beneficiary/receiver, referral code zero, and exact approval spender/amount. It rechecks and simulates immediately before submission.

@@ -67,7 +67,7 @@ codex plugin marketplace upgrade trading-bot-plugins
 codex plugin add trading-bot@trading-bot-plugins
 ```
 
-更新后新建 Codex 任务。仅在授权失效时执行：
+更新后新建 Codex 任务。使用插件时，如果需要登录授权且当前环境支持执行命令，助手会主动打开授权页面，用户只需在页面完成登录和授权。无法自动发起时，可在插件的连接设置中授权，或在终端执行：
 
 ```bash
 codex mcp login trading-bot
@@ -80,7 +80,7 @@ claude plugin marketplace update trading-bot-plugins
 claude plugin update trading-bot@trading-bot-plugins
 ```
 
-更新后重启 Claude Code 或新建会话。仅在授权失效时打开 `/mcp`，选择 `trading-bot` 并重新授权。
+更新后重启 Claude Code 或新建会话。如果尚未登录授权或授权已失效，打开 `/mcp`，选择 `trading-bot` 并完成登录授权。
 
 ### 其他 Agent 平台
 
@@ -96,6 +96,6 @@ claude plugin update trading-bot@trading-bot-plugins
 请列出 Trading Bot 当前支持的项目和操作，不要执行任何交易。
 ```
 
-如果没有出现 Trading Bot 工具，请检查 Plugin 是否已安装或更新、MCP 地址是否正确、OAuth 是否有效，以及当前网络是否可以访问 MCP 服务。
+Codex 需要授权时，助手会通过客户端主动打开登录授权页面。页面显示完成后，仍需等待客户端确认登录成功，才算连接完成。自动发起不可用时，才需要在插件的连接设置中授权。登录成功后若工具仍不可用，先使用客户端支持的连接刷新；没有刷新入口时再新建会话。登录服务繁忙时，请按提示稍后重试。
 
 > 不要在聊天或配置文件中填写访问令牌、私钥或钱包签名密钥。
